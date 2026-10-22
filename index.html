@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Far Shore Works</title>
+<meta name="description" content="Far Shore Works is an independent studio making games and apps, based in Louisiana.">
+<meta property="og:title" content="Far Shore Works">
+<meta property="og:description" content="An independent studio making games and apps.">
+<meta name="theme-color" content="#E9ECE6" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0D1424" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%2314213D'/%3E%3Ccircle cx='21' cy='12' r='4' fill='%23F2C46D'/%3E%3Cpath d='M4 21h24' stroke='%23E9ECE6' stroke-width='2.4' stroke-linecap='round'/%3E%3Cpath d='M8 25.5h16' stroke='%237E9BC9' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Syne:wght@600;800&family=Figtree:wght@400;500&display=swap">
+<style>
+/* Layout: one horizon. Sky on top, a low moon, a far shoreline, water below; the words sit on the waterline. */
+:root{
+  --sky-top:#DCE3EA; --sky-low:#F1EDE3; --sun:#E9A94A; --shore:#4C5A6E; --water:#14213D; --water-2:#1E3159;
+  --ink:#14213D; --muted:#56627A; --line:#C9D0D8; --on-water:#E9ECE6; --on-water-muted:#A9B6CC;
+  --display:"Syne","Avenir Next",system-ui,sans-serif; --body:"Figtree","Helvetica Neue",system-ui,sans-serif;
+}
+@media (prefers-color-scheme: dark){:root{
+  --sky-top:#0D1424; --sky-low:#1C2740; --sun:#F2C46D; --shore:#2B3956; --water:#070C17; --water-2:#101A30;
+  --ink:#E9ECE6; --muted:#A9B6CC; --line:#2B3956; --on-water:#E9ECE6; --on-water-muted:#8D9BB5; color-scheme:dark}}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{background:var(--water);color:var(--ink);font:400 17px/1.55 var(--body);-webkit-font-smoothing:antialiased;
+  display:flex;flex-direction:column;min-height:100%}
+.sky{position:relative;flex:1 0 auto;min-height:40vh;background:linear-gradient(180deg,var(--sky-top) 0%,var(--sky-low) 100%);overflow:hidden;
+  padding:max(28px,env(safe-area-inset-top,0px)) max(24px,env(safe-area-inset-right,0px)) 0 max(24px,env(safe-area-inset-left,0px))}
+.top{max-width:1080px;margin:0 auto;display:flex;justify-content:space-between;align-items:center;gap:16px;position:relative;z-index:2}
+.mark{display:flex;align-items:center;gap:10px;font:800 13px/1 var(--display);letter-spacing:.22em;text-transform:uppercase;color:var(--ink);text-decoration:none}
+.mark svg{width:26px;height:26px}
+.top a.gh{font:500 14px/1 var(--body);color:var(--muted);text-decoration:none;border-bottom:1px solid transparent}
+.top a.gh:hover{color:var(--ink);border-color:currentColor}
+.horizon{position:absolute;left:0;right:0;bottom:0;height:46%;pointer-events:none}
+.horizon svg{width:100%;height:100%;display:block}
+.sun{fill:var(--sun)}
+.shore{fill:var(--shore)}
+.water{flex:0 0 auto;background:linear-gradient(180deg,var(--water) 0%,var(--water-2) 100%);color:var(--on-water);
+  padding:0 max(24px,env(safe-area-inset-right,0px)) max(40px,env(safe-area-inset-bottom,0px)) max(24px,env(safe-area-inset-left,0px))}
+.wrap{max-width:1080px;margin:0 auto}
+h1{font:800 clamp(44px,9.5vw,118px)/.92 var(--display);letter-spacing:-.03em;margin:0;padding-top:clamp(28px,5vw,56px);color:var(--on-water);text-wrap:balance}
+h1 span{display:block}
+.lede{max-width:34ch;font-size:clamp(19px,2.2vw,23px);line-height:1.4;margin:-.2em 0 0;color:var(--on-water)}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:28px 40px;margin:56px 0 0;padding:28px 0 0;border-top:1px solid rgba(233,236,230,.16)}
+.grid h2{font:600 12px/1 var(--display);letter-spacing:.2em;text-transform:uppercase;color:var(--on-water-muted);margin:0 0 10px}
+.grid p{margin:0;color:var(--on-water);max-width:36ch}
+.ripple{stroke:var(--on-water);stroke-opacity:.22;stroke-width:1.2;fill:none;stroke-linecap:round}
+footer{margin-top:64px;display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px 24px;font-size:14px;color:var(--on-water-muted)}
+footer a{color:inherit}
+a:focus-visible{outline:2px solid var(--sun);outline-offset:3px;border-radius:2px}
+@media (prefers-reduced-motion:no-preference){
+  .drift{animation:drift 9s ease-in-out infinite alternate}
+  .drift.b{animation-duration:12s;animation-delay:-3s}
+  @keyframes drift{from{transform:translateX(-18px)}to{transform:translateX(18px)}}
+  .sun{animation:rise 1.6s cubic-bezier(.2,.7,.2,1) both}
+  @keyframes rise{from{transform:translateY(24px);opacity:.6}to{transform:none;opacity:1}}
+}
+</style>
+</head>
+<body>
+<header class="sky">
+  <div class="top">
+    <a class="mark" href="./" aria-label="Far Shore Works home">
+      <svg viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="7" fill="#14213D"/><circle cx="21" cy="12" r="4" fill="#F2C46D"/><path d="M4 21h24" stroke="#E9ECE6" stroke-width="2.4" stroke-linecap="round"/><path d="M8 25.5h16" stroke="#7E9BC9" stroke-width="2" stroke-linecap="round"/></svg>
+      Far Shore Works
+    </a>
+    <a class="gh" href="https://github.com/Far-Shore-Works">GitHub</a>
+  </div>
+  <div class="horizon" aria-hidden="true">
+    <svg viewBox="0 0 1440 400" preserveAspectRatio="xMidYMax slice">
+      <circle class="sun" cx="1010" cy="300" r="46"/>
+      <path class="shore" d="M0 362 C120 356 180 340 260 344 C340 348 380 330 470 333 C560 336 600 352 700 350 L760 349 C840 347 900 336 980 338 C1060 340 1120 352 1220 349 C1300 347 1370 340 1440 342 L1440 400 L0 400 Z"/>
+    </svg>
+  </div>
+</header>
+
+<main class="water">
+  <div class="wrap">
+    <h1><span>Far Shore</span><span>Works</span></h1>
+    <svg width="220" height="26" viewBox="0 0 220 26" aria-hidden="true" style="display:block;margin:14px 0 22px">
+      <path class="ripple drift" d="M2 8 C40 2 70 14 110 8 S180 2 218 8"/>
+      <path class="ripple drift b" d="M30 20 C60 15 90 25 120 20 S170 15 190 20"/>
+    </svg>
+    <p class="lede">An independent studio making games and apps, built carefully and played a lot before they ship.</p>
+
+    <section class="grid" aria-label="About the studio">
+      <div>
+        <h2>What we make</h2>
+        <p>Games for PC first, then apps and smaller experiments for phones and Roblox when an idea fits.</p>
+      </div>
+      <div>
+        <h2>Right now</h2>
+        <p>Our first game is in development. We'll share it here when it's ready to show.</p>
+      </div>
+      <div>
+        <h2>Where</h2>
+        <p>A two-person studio with roots in Louisiana.</p>
+      </div>
+    </section>
+
+    <footer>
+      <span>© 2026 Far Shore Works</span>
+      <a href="https://github.com/Far-Shore-Works">github.com/Far-Shore-Works</a>
+    </footer>
+  </div>
+</main>
+</body>
+</html>
