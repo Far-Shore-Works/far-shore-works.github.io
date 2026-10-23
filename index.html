@@ -30,6 +30,11 @@ body{background:var(--black);color:var(--white);font:400 16px/1.6 var(--body);-w
 a{color:inherit}
 a:focus-visible{outline:2px solid var(--white);outline-offset:3px;border-radius:2px}
 
+/* Smooth scrolling (Lenis) */
+html.lenis,html.lenis body{height:auto}
+.lenis.lenis-smooth{scroll-behavior:auto!important}
+.lenis.lenis-stopped{overflow:hidden}
+
 /* ---------- HERO ---------- */
 .hero{position:relative;height:100vh;height:100svh;min-height:520px;overflow:hidden;isolation:isolate;background:#050507}
 
@@ -129,6 +134,7 @@ footer{margin-top:clamp(64px,9vw,120px);display:flex;flex-wrap:wrap;justify-cont
   </div>
 </main>
 
+<script src="assets/js/lenis.min.js"></script>
 <script>
 (() => {
   const hero  = document.getElementById('hero');
@@ -198,6 +204,13 @@ footer{margin-top:clamp(64px,9vw,120px);display:flex;flex-wrap:wrap;justify-cont
   const ready = document.fonts ? document.fonts.load(`${FONT_WEIGHT} 100px ${FONT}`) : Promise.resolve();
   ready.then(draw, draw);
   new ResizeObserver(schedule).observe(hero);
+
+  // Smooth, eased scrolling. Skipped for people who ask for reduced motion.
+  if (window.Lenis && !reduce.matches) {
+    const lenis = new Lenis({ lerp: 0.085, wheelMultiplier: 1, smoothWheel: true });
+    const raf2 = t => { lenis.raf(t); requestAnimationFrame(raf2); };
+    requestAnimationFrame(raf2);
+  }
 })();
 </script>
 </body>
