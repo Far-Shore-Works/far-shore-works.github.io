@@ -58,8 +58,8 @@ a:focus-visible{outline:2px solid var(--white);outline-offset:3px;border-radius:
 
 
 /* The real heading. Visible until the cutout is drawn, then kept for screen readers and search. */
-.title{position:absolute;inset:0;z-index:2;margin:0;display:grid;place-items:center;text-align:center;
-  font:800 clamp(40px,9vw,140px)/.95 var(--display);letter-spacing:-.02em;text-transform:uppercase;padding:var(--pad)}
+.title{position:absolute;inset:0;z-index:2;margin:0;display:grid;place-items:center start;text-align:left;
+  font:800 clamp(64px,22vw,320px)/.9 var(--display);letter-spacing:-.02em;text-transform:uppercase;padding:var(--pad)}
 .hero.cut .title{clip:rect(0 0 0 0);clip-path:inset(50%);width:1px;height:1px;overflow:hidden;white-space:nowrap;padding:0}
 
 /* Corner labels */
@@ -140,52 +140,53 @@ footer{margin-top:clamp(64px,9vw,120px);display:flex;flex-wrap:wrap;justify-cont
   const reduce = matchMedia('(prefers-reduced-motion: reduce)');
   video.addEventListener('canplay', () => { video.classList.add('ready'); if (reduce.matches) video.pause(); });
 
-  // Which line breaks to use for the screen shape.
-  function layoutFor(w, h) {
-    const r = w / h;
-    if (r >= 1.2)  return ['FAR SHORE WORKS'];
-    if (r >= 0.75) return ['FAR SHORE', 'WORKS'];
-    return ['FAR', 'SHORE', 'WORKS'];
-  }
+  const LINES = ['FAR', 'SHORE', 'WORKS'];
+  const tl = hero.querySelector('.corner.tl'), tr = hero.querySelector('.corner.tr'), bl = hero.querySelector('.corner.bl');
 
   function draw() {
     const w = hero.clientWidth, h = hero.clientHeight;
     const dpr = Math.min(window.devicePixelRatio || 1, 3);
     const W = Math.round(w * dpr), H = Math.round(h * dpr);
-    const lines = layoutFor(w, h);
+
+    // The type lives in the box between the corner labels, flush with their left edge.
+    const gapY = Math.max(16, tl.offsetLeft * 0.6);
+    const boxL = tl.offsetLeft * dpr;
+    const boxR = (tr.offsetLeft + tr.offsetWidth) * dpr;
+    const boxT = (tl.offsetTop + tl.offsetHeight + gapY) * dpr;
+    const boxB = (bl.offsetTop - gapY) * dpr;
 
     const c = document.createElement('canvas');
     c.width = W; c.height = H;
     const ctx = c.getContext('2d');
+    ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
 
-    // Size the type so the widest line fills ~90% of the width, capped by height.
     const setFont = s => {
       ctx.font = `${FONT_WEIGHT} ${s}px ${FONT}, "Avenir Next", "Helvetica Neue", Arial, sans-serif`;
-      if ('letterSpacing' in ctx) ctx.letterSpacing = `${-0.02 * s}px`;
+      if ('letterSpacing' in ctx) ctx.letterSpacing = `${-0.03 * s}px`;
     };
+    const ink = l => { const m = ctx.measureText(l); return { left: m.actualBoundingBoxLeft, width: m.actualBoundingBoxLeft + m.actualBoundingBoxRight }; };
+
+    // As big as the box allows: the widest line fills the width, or the stack fills the height.
     setFont(100);
-    const widest = Math.max(...lines.map(l => ctx.measureText(l).width));
+    const widest = Math.max(...LINES.map(l => ink(l).width));
     const cap100 = ctx.measureText('H').actualBoundingBoxAscent;
-    const gapK = 0.3; // gap between lines as a share of cap height
-    const blockK = (lines.length + gapK * (lines.length - 1)) * cap100 / 100;
-    let size = Math.min(W * 0.9 / widest * 100, H * 0.62 / blockK);
+    const gapK = 0.16; // gap between lines as a share of cap height
+    const block100 = (LINES.length + gapK * (LINES.length - 1)) * cap100;
+    const size = Math.min((boxR - boxL) / widest * 100, (boxB - boxT) / block100 * 100);
     setFont(size);
 
     const cap = ctx.measureText('H').actualBoundingBoxAscent;
     const gap = cap * gapK;
-    const total = lines.length * cap + (lines.length - 1) * gap;
-    let y = (H - total) / 2 + cap;
-    ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
-    const rows = lines.map(l => { const row = [l, y]; y += cap + gap; return row; });
+    const total = LINES.length * cap + (LINES.length - 1) * gap;
+    let y = boxT + (boxB - boxT - total) / 2 + cap;
 
     // Mask: opaque everywhere, transparent where the letters are.
     ctx.fillStyle = '#000'; ctx.fillRect(0, 0, W, H);
     ctx.globalCompositeOperation = 'destination-out';
-    rows.forEach(([l, ly]) => ctx.fillText(l, W / 2, ly));
+    LINES.forEach(l => { ctx.fillText(l, boxL + ink(l).left, y); y += cap + gap; });
     const url = `url(${c.toDataURL('image/png')})`;
     glass.style.webkitMaskImage = url;
     glass.style.maskImage = url;
-
 
     hero.classList.add('cut');
   }
