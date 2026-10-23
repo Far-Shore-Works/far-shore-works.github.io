@@ -7,83 +7,94 @@
 <meta name="description" content="Far Shore Works is an independent studio making games and apps, based in Louisiana.">
 <meta property="og:title" content="Far Shore Works">
 <meta property="og:description" content="An independent studio making games and apps.">
-<meta name="theme-color" content="#E9ECE6" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#0D1424" media="(prefers-color-scheme: dark)">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%2314213D'/%3E%3Ccircle cx='21' cy='12' r='4' fill='%23F2C46D'/%3E%3Cpath d='M4 21h24' stroke='%23E9ECE6' stroke-width='2.4' stroke-linecap='round'/%3E%3Cpath d='M8 25.5h16' stroke='%237E9BC9' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Syne:wght@600;800&family=Figtree:wght@400;500&display=swap">
+<meta name="theme-color" content="#000000">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23000'/%3E%3Cpath d='M6 20h20' stroke='%23fff' stroke-width='2.4' stroke-linecap='round'/%3E%3Cpath d='M10 25h12' stroke='%23fff' stroke-opacity='.5' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E">
+<link rel="preload" href="assets/fonts/sora-latin-600-normal.woff2" as="font" type="font/woff2" crossorigin>
 <style>
-/* Layout: one horizon. Sky on top, a low moon, a far shoreline, water below; the words sit on the waterline. */
+@font-face{font-family:"Sora";src:url(assets/fonts/sora-latin-400-normal.woff2) format("woff2");font-weight:400;font-display:swap}
+@font-face{font-family:"Sora";src:url(assets/fonts/sora-latin-600-normal.woff2) format("woff2");font-weight:600;font-display:block}
+@font-face{font-family:"Geist Mono";src:url(assets/fonts/geist-mono-latin-500-normal.woff2) format("woff2");font-weight:500;font-display:swap}
 :root{
-  --sky-top:#DCE3EA; --sky-low:#F1EDE3; --sun:#E9A94A; --shore:#4C5A6E; --water:#14213D; --water-2:#1E3159;
-  --ink:#14213D; --muted:#56627A; --line:#C9D0D8; --on-water:#E9ECE6; --on-water-muted:#A9B6CC;
-  --display:"Syne","Avenir Next",system-ui,sans-serif; --body:"Figtree","Helvetica Neue",system-ui,sans-serif;
+  --black:#000; --white:#F4F4F2; --muted:rgba(244,244,242,.56); --line:rgba(244,244,242,.14);
+  --glass:rgba(4,4,6,.74);           /* tint of the frosted glass */
+  --blur:30px;                       /* frost amount */
+  --display:"Sora","Avenir Next",system-ui,sans-serif;
+  --mono:"Geist Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+  --body:"Sora","Helvetica Neue",system-ui,sans-serif;
+  --pad:clamp(20px,3.2vw,48px);
+  color-scheme:dark;
 }
-@media (prefers-color-scheme: dark){:root{
-  --sky-top:#0D1424; --sky-low:#1C2740; --sun:#F2C46D; --shore:#2B3956; --water:#070C17; --water-2:#101A30;
-  --ink:#E9ECE6; --muted:#A9B6CC; --line:#2B3956; --on-water:#E9ECE6; --on-water-muted:#8D9BB5; color-scheme:dark}}
 *{box-sizing:border-box}
-html,body{margin:0;height:100%}
-body{background:var(--water);color:var(--ink);font:400 17px/1.55 var(--body);-webkit-font-smoothing:antialiased;
-  display:flex;flex-direction:column;min-height:100%}
-.sky{position:relative;flex:1 0 auto;min-height:40vh;background:linear-gradient(180deg,var(--sky-top) 0%,var(--sky-low) 100%);overflow:hidden;
-  padding:max(28px,env(safe-area-inset-top,0px)) max(24px,env(safe-area-inset-right,0px)) 0 max(24px,env(safe-area-inset-left,0px))}
-.top{max-width:1080px;margin:0 auto;display:flex;justify-content:space-between;align-items:center;gap:16px;position:relative;z-index:2}
-.mark{display:flex;align-items:center;gap:10px;font:800 13px/1 var(--display);letter-spacing:.22em;text-transform:uppercase;color:var(--ink);text-decoration:none}
-.mark svg{width:26px;height:26px}
-.top a.gh{font:500 14px/1 var(--body);color:var(--muted);text-decoration:none;border-bottom:1px solid transparent}
-.top a.gh:hover{color:var(--ink);border-color:currentColor}
-.horizon{position:absolute;left:0;right:0;bottom:0;height:46%;pointer-events:none}
-.horizon svg{width:100%;height:100%;display:block}
-.sun{fill:var(--sun)}
-.shore{fill:var(--shore)}
-.water{flex:0 0 auto;background:linear-gradient(180deg,var(--water) 0%,var(--water-2) 100%);color:var(--on-water);
-  padding:0 max(24px,env(safe-area-inset-right,0px)) max(40px,env(safe-area-inset-bottom,0px)) max(24px,env(safe-area-inset-left,0px))}
-.wrap{max-width:1080px;margin:0 auto}
-h1{font:800 clamp(44px,9.5vw,118px)/.92 var(--display);letter-spacing:-.03em;margin:0;padding-top:clamp(28px,5vw,56px);color:var(--on-water);text-wrap:balance}
-h1 span{display:block}
-.lede{max-width:34ch;font-size:clamp(19px,2.2vw,23px);line-height:1.4;margin:-.2em 0 0;color:var(--on-water)}
-.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:28px 40px;margin:56px 0 0;padding:28px 0 0;border-top:1px solid rgba(233,236,230,.16)}
-.grid h2{font:600 12px/1 var(--display);letter-spacing:.2em;text-transform:uppercase;color:var(--on-water-muted);margin:0 0 10px}
-.grid p{margin:0;color:var(--on-water);max-width:36ch}
-.ripple{stroke:var(--on-water);stroke-opacity:.22;stroke-width:1.2;fill:none;stroke-linecap:round}
-footer{margin-top:64px;display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px 24px;font-size:14px;color:var(--on-water-muted)}
-footer a{color:inherit}
-a:focus-visible{outline:2px solid var(--sun);outline-offset:3px;border-radius:2px}
-@media (prefers-reduced-motion:no-preference){
-  .drift{animation:drift 9s ease-in-out infinite alternate}
-  .drift.b{animation-duration:12s;animation-delay:-3s}
-  @keyframes drift{from{transform:translateX(-18px)}to{transform:translateX(18px)}}
-  .sun{animation:rise 1.6s cubic-bezier(.2,.7,.2,1) both}
-  @keyframes rise{from{transform:translateY(24px);opacity:.6}to{transform:none;opacity:1}}
-}
+html,body{margin:0}
+body{background:var(--black);color:var(--white);font:400 16px/1.6 var(--body);-webkit-font-smoothing:antialiased}
+a{color:inherit}
+a:focus-visible{outline:2px solid var(--white);outline-offset:3px;border-radius:2px}
+
+/* ---------- HERO ---------- */
+.hero{position:relative;height:100vh;height:100svh;min-height:520px;overflow:hidden;isolation:isolate;background:#050507}
+
+/* Layer 1: what shows through. The video, with an animated stand-in until a video is added. */
+.stage{position:absolute;inset:0;z-index:0;background:#2a2b2c url(assets/hero-poster.jpg) center/cover no-repeat}
+.stage video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity .8s ease}
+.stage video.ready{opacity:1}
+
+/* Layer 2: black frosted glass with the words cut out of it (mask is drawn by the script). */
+.glass{position:absolute;inset:0;z-index:1;background:var(--glass);
+  -webkit-backdrop-filter:blur(var(--blur)) saturate(140%);backdrop-filter:blur(var(--blur)) saturate(140%);
+  -webkit-mask-size:100% 100%;mask-size:100% 100%;-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat}
+/* fine grain so it reads as frosted, not just dark */
+.glass::after{content:"";position:absolute;inset:0;opacity:.09;mix-blend-mode:overlay;pointer-events:none;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
+
+
+/* The real heading. Visible until the cutout is drawn, then kept for screen readers and search. */
+.title{position:absolute;inset:0;z-index:2;margin:0;display:grid;place-items:center;text-align:center;
+  font:600 clamp(40px,9vw,140px)/.95 var(--display);letter-spacing:-.02em;text-transform:uppercase;padding:var(--pad)}
+.hero.cut .title{clip:rect(0 0 0 0);clip-path:inset(50%);width:1px;height:1px;overflow:hidden;white-space:nowrap;padding:0}
+
+/* Corner labels */
+.corner{position:absolute;z-index:3;font:500 12px/1.3 var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--white)}
+.corner.tl{top:max(var(--pad),env(safe-area-inset-top));left:max(var(--pad),env(safe-area-inset-left))}
+.corner.tr{top:max(var(--pad),env(safe-area-inset-top));right:max(var(--pad),env(safe-area-inset-right))}
+.corner.bl{bottom:max(var(--pad),env(safe-area-inset-bottom));left:max(var(--pad),env(safe-area-inset-left));color:var(--muted)}
+.corner.br{bottom:max(var(--pad),env(safe-area-inset-bottom));right:max(var(--pad),env(safe-area-inset-right));color:var(--muted)}
+.m-only{display:none}
+@media (max-width:560px){.corner.br{display:none}.m-only{display:inline}}
+.corner a{text-decoration:none;border-bottom:1px solid transparent}
+.corner a:hover{border-color:currentColor}
+
+
+/* ---------- ABOUT (existing copy, restyled to match) ---------- */
+.about{padding:clamp(72px,10vw,140px) var(--pad) max(40px,env(safe-area-inset-bottom))}
+.wrap{max-width:1160px;margin:0 auto}
+.lede{max-width:28ch;margin:0;font:500 clamp(24px,3.4vw,44px)/1.2 var(--display);letter-spacing:-.02em}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:28px 40px;margin:clamp(56px,8vw,96px) 0 0;padding:28px 0 0;border-top:1px solid var(--line)}
+.grid h2{font:500 12px/1 var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin:0 0 12px}
+.grid p{margin:0;max-width:36ch}
+footer{margin-top:clamp(64px,9vw,120px);display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px 24px;font:400 12px/1.4 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
 </style>
 </head>
 <body>
-<header class="sky">
-  <div class="top">
-    <a class="mark" href="./" aria-label="Far Shore Works home">
-      <svg viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="7" fill="#14213D"/><circle cx="21" cy="12" r="4" fill="#F2C46D"/><path d="M4 21h24" stroke="#E9ECE6" stroke-width="2.4" stroke-linecap="round"/><path d="M8 25.5h16" stroke="#7E9BC9" stroke-width="2" stroke-linecap="round"/></svg>
-      Far Shore Works
-    </a>
-    <a class="gh" href="https://github.com/Far-Shore-Works">GitHub</a>
+
+<header class="hero" id="hero">
+  <div class="stage" aria-hidden="true">
+    <video id="heroVideo" autoplay muted loop playsinline preload="auto" poster="assets/hero-poster.jpg">
+      <source src="assets/hero.mp4" type="video/mp4">
+    </video>
   </div>
-  <div class="horizon" aria-hidden="true">
-    <svg viewBox="0 0 1440 400" preserveAspectRatio="xMidYMax slice">
-      <circle class="sun" cx="1010" cy="300" r="46"/>
-      <path class="shore" d="M0 362 C120 356 180 340 260 344 C340 348 380 330 470 333 C560 336 600 352 700 350 L760 349 C840 347 900 336 980 338 C1060 340 1120 352 1220 349 C1300 347 1370 340 1440 342 L1440 400 L0 400 Z"/>
-    </svg>
-  </div>
+
+  <div class="glass" id="glass"></div>
+
+  <h1 class="title">Far Shore Works</h1>
+
+  <span class="corner tl">©2026</span>
+  <a class="corner tr" href="https://github.com/Far-Shore-Works">GitHub</a>
+  <span class="corner bl">Independent studio — games &amp; apps<span class="m-only"> · Louisiana</span></span>
+  <span class="corner br">Louisiana</span>
 </header>
 
-<main class="water">
+<main class="about">
   <div class="wrap">
-    <h1><span>Far Shore</span><span>Works</span></h1>
-    <svg width="220" height="26" viewBox="0 0 220 26" aria-hidden="true" style="display:block;margin:14px 0 22px">
-      <path class="ripple drift" d="M2 8 C40 2 70 14 110 8 S180 2 218 8"/>
-      <path class="ripple drift b" d="M30 20 C60 15 90 25 120 20 S170 15 190 20"/>
-    </svg>
     <p class="lede">An independent studio making games and apps, built carefully and played a lot before they ship.</p>
 
     <section class="grid" aria-label="About the studio">
@@ -107,5 +118,76 @@ a:focus-visible{outline:2px solid var(--sun);outline-offset:3px;border-radius:2p
     </footer>
   </div>
 </main>
+
+<script>
+(() => {
+  const hero  = document.getElementById('hero');
+  const glass = document.getElementById('glass');
+  const video = document.getElementById('heroVideo');
+  const FONT_WEIGHT = 600, FONT = 'Sora';
+
+  // Video: show it once it can play; respect reduced motion.
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)');
+  video.addEventListener('canplay', () => { video.classList.add('ready'); if (reduce.matches) video.pause(); });
+
+  // Which line breaks to use for the screen shape.
+  function layoutFor(w, h) {
+    const r = w / h;
+    if (r >= 1.2)  return ['FAR SHORE WORKS'];
+    if (r >= 0.75) return ['FAR SHORE', 'WORKS'];
+    return ['FAR', 'SHORE', 'WORKS'];
+  }
+
+  function draw() {
+    const w = hero.clientWidth, h = hero.clientHeight;
+    const dpr = Math.min(window.devicePixelRatio || 1, 3);
+    const W = Math.round(w * dpr), H = Math.round(h * dpr);
+    const lines = layoutFor(w, h);
+
+    const c = document.createElement('canvas');
+    c.width = W; c.height = H;
+    const ctx = c.getContext('2d');
+
+    // Size the type so the widest line fills ~90% of the width, capped by height.
+    const setFont = s => {
+      ctx.font = `${FONT_WEIGHT} ${s}px ${FONT}, "Avenir Next", "Helvetica Neue", Arial, sans-serif`;
+      if ('letterSpacing' in ctx) ctx.letterSpacing = `${-0.02 * s}px`;
+    };
+    setFont(100);
+    const widest = Math.max(...lines.map(l => ctx.measureText(l).width));
+    const cap100 = ctx.measureText('H').actualBoundingBoxAscent;
+    const gapK = 0.3; // gap between lines as a share of cap height
+    const blockK = (lines.length + gapK * (lines.length - 1)) * cap100 / 100;
+    let size = Math.min(W * 0.9 / widest * 100, H * 0.62 / blockK);
+    setFont(size);
+
+    const cap = ctx.measureText('H').actualBoundingBoxAscent;
+    const gap = cap * gapK;
+    const total = lines.length * cap + (lines.length - 1) * gap;
+    let y = (H - total) / 2 + cap;
+    ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
+    const rows = lines.map(l => { const row = [l, y]; y += cap + gap; return row; });
+
+    // Mask: opaque everywhere, transparent where the letters are.
+    ctx.fillStyle = '#000'; ctx.fillRect(0, 0, W, H);
+    ctx.globalCompositeOperation = 'destination-out';
+    rows.forEach(([l, ly]) => ctx.fillText(l, W / 2, ly));
+    const url = `url(${c.toDataURL('image/png')})`;
+    glass.style.webkitMaskImage = url;
+    glass.style.maskImage = url;
+
+
+    hero.classList.add('cut');
+  }
+
+  let raf;
+  const schedule = () => { cancelAnimationFrame(raf); raf = requestAnimationFrame(draw); };
+
+  // Wait for the font so the cutout uses Sora, not a fallback.
+  const ready = document.fonts ? document.fonts.load(`${FONT_WEIGHT} 100px ${FONT}`) : Promise.resolve();
+  ready.then(draw, draw);
+  new ResizeObserver(schedule).observe(hero);
+})();
+</script>
 </body>
 </html>
