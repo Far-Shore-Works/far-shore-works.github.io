@@ -21,8 +21,8 @@
   --ink-2:#141414;        /* panels on night */
   --paper:#f2f2ee;        /* day */
   --paper-2:#e4e4df;      /* rules on day */
-  --lav:#c4b5fd;          /* soft lavender: accents on night */
-  --lav-ink:#6650d2;      /* deeper lavender: readable accents on day */
+  --lav:#d8cef7;          /* pastel lavender: glow on night, highlights on day */
+  --lav-2:#c9bcf2;        /* a touch deeper, for thin lines on day */
   --dim:rgba(242,242,238,.5);
   --dim-ink:rgba(10,10,10,.55);
   --display:"Geist","Helvetica Neue",Arial,sans-serif;
@@ -99,10 +99,11 @@ html.lenis,html.lenis body{height:auto}
 .win{display:inline-flex;align-items:center;vertical-align:top;gap:.08em;margin:0 .04em}
 .win i{font-style:normal;font-weight:400}
 /* the word in the brackets: a one-line window that scrolls up to the next word */
-.rot{display:inline-block;height:1em;overflow:hidden;vertical-align:top;padding:0 .04em}
+.rot{display:inline-block;height:1em;overflow:hidden;vertical-align:top}
 .rot-in{display:flex;flex-direction:column;align-items:flex-start}
-.rot-in b{display:block;height:1em;line-height:1;font-weight:600;white-space:nowrap;color:var(--lav-ink)}
-.n{color:var(--lav-ink)}
+.rot-in b{display:block;height:1em;line-height:1;font-weight:600;white-space:nowrap;padding:0 .1em}
+.rot{background:var(--lav);padding:0;border-radius:2px}
+.n{background:var(--lav);color:var(--ink);padding:1px 5px;margin-right:4px;border-radius:2px}
 .day ::selection{background:var(--lav);color:var(--ink)}
 /* three tall rows that alternate left and right down the page */
 .rows{display:grid;gap:clamp(140px,22vh,260px);margin-top:clamp(140px,22vh,260px)}
@@ -111,8 +112,8 @@ html.lenis,html.lenis body{height:auto}
 .idx{margin:0 0 22px;padding-top:14px;border-top:1px solid var(--ink);color:var(--dim-ink)}
 .head{margin:0;font:600 clamp(40px,5.4vw,80px)/.96 var(--display);text-transform:uppercase;letter-spacing:-.045em}
 .body{margin:26px 0 0;max-width:38ch;font-size:clamp(17px,1.35vw,20px);line-height:1.55}
-.body a{text-decoration:underline;text-underline-offset:4px;text-decoration-thickness:1px;text-decoration-color:var(--lav-ink)}
-.body a:hover,footer a:hover{color:var(--lav-ink)}
+.body a{text-decoration:underline;text-underline-offset:4px;text-decoration-thickness:3px;text-decoration-color:var(--lav)}
+.body a:hover,footer a:hover{background:var(--lav)}
 .reveal{opacity:0;transform:translateY(22px);transition:opacity .9s ease,transform 1s cubic-bezier(.2,.7,.2,1)}
 .blk .body.reveal{transition-delay:.18s}
 .blk.in .reveal{opacity:1;transform:none}
@@ -247,7 +248,7 @@ footer a:hover{text-decoration:underline;text-underline-offset:4px}
   const FS = `precision highp float;
 uniform sampler2D uVideo,uAtlas;uniform vec2 uRes,uCell,uAG,uAUse;uniform vec4 uCover;
 uniform float uLo,uHi,uTime,uIntro,uFade,uSweep,uGlitch,uWipe,uBlock,uBRows,uHasVideo,uRampLen,uScr,uScrLen,uFaint,uPlus;
-const vec3 INK=vec3(.0392),PAPER=vec3(.949,.949,.933),LAV=vec3(.769,.71,.992);
+const vec3 INK=vec3(.0392),PAPER=vec3(.949,.949,.933),LAV=vec3(.78,.71,.98);
 float hash(vec2 p){p=fract(p*vec2(123.34,456.21));p+=dot(p,p+45.32);return fract(p.x*p.y);}
 float glyph(float i,vec2 l){float c=mod(i,uAG.x),r=floor(i/uAG.x);return texture2D(uAtlas,(vec2(c,r)+l)*uAUse).a;}
 float eio(float t){return t<.5?4.*t*t*t:1.-pow(-2.*t+2.,3.)/2.;}
@@ -449,7 +450,7 @@ void main(){
   const bg = $('starfield'), bctx = bg.getContext('2d');
   let BW = 0, BH = 0, bdpr = 1, bgStars = [], shooters = [], nextShot = 0, lastBg = 0;
   const SPRITES = {};                                      // glyphs drawn once, stamped many times
-  const LAV_STAR = '#8c78e8';
+  const LAV_STAR = '#b3a5e6';
   function sprite(g, size, color = INK) {
     const key = g + size + color;
     if (SPRITES[key]) return SPRITES[key];
