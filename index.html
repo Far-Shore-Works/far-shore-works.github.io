@@ -39,7 +39,7 @@ html.lenis,html.lenis body{height:auto}
 .mono{font:500 11px/1.4 var(--mono);letter-spacing:.14em;text-transform:uppercase}
 
 /* ---------- HERO (pinned while it dissolves) ---------- */
-.track{position:relative;z-index:2;height:200vh;height:200svh;background:var(--paper);pointer-events:none}
+.track{position:relative;z-index:2;height:200vh;height:200svh;pointer-events:none}
 .hero{position:sticky;top:0;height:100vh;height:100svh;min-height:520px;overflow:hidden;pointer-events:auto;background:var(--ink)}
 .feed{position:absolute;inset:0;width:100%;height:100%;display:block;z-index:1}
 /* The video is only a source: it is never shown, the characters draw the picture. */
@@ -83,7 +83,8 @@ html.lenis,html.lenis body{height:auto}
 .day ::selection{background:var(--ink);color:var(--paper)}
 .wrap{position:relative;z-index:1;max-width:1240px;margin:0 auto}
 /* black ASCII stars behind the day section */
-.sky{position:absolute;inset:0;width:100%;height:100%;z-index:0;pointer-events:none;display:block}
+/* the whole site sits on one fixed starfield */
+.starfield{position:fixed;inset:0;width:100%;height:100%;z-index:0;pointer-events:none;display:block}
 .statement{display:flex;flex-direction:column;align-items:center;text-align:center;padding-top:clamp(8px,2vw,24px)}
 .kicker{color:var(--dim-ink);margin:0 0 clamp(28px,4vw,48px)}
 .lede{margin:0;font:600 clamp(28px,4.6vw,72px)/1.02 var(--display);text-transform:uppercase;letter-spacing:-.045em}
@@ -110,6 +111,7 @@ footer a:hover{text-decoration:underline;text-underline-offset:4px}
 </style>
 </head>
 <body>
+<canvas class="starfield" id="starfield" aria-hidden="true"></canvas>
 
 <div class="track" id="track">
   <header class="hero" id="hero">
@@ -143,7 +145,6 @@ footer a:hover{text-decoration:underline;text-underline-offset:4px}
 </div>
 
 <main class="day" id="day">
-  <canvas class="sky" id="sky" aria-hidden="true"></canvas>
   <div class="wrap">
     <div class="statement">
       <p class="mono kicker">[ 01 ] The studio</p>
@@ -297,34 +298,19 @@ footer a:hover{text-decoration:underline;text-underline-offset:4px}
   }
 
   // ---------- pixel wipe: night to day ----------
-  let blocks, bsz, bcols, brows, dayStars = [], pinLen = 0;
+  let blocks, bsz, bcols, brows;
   function buildWipe() {
     bsz = W < 640 ? 22 : 30;
     bcols = Math.ceil(W / bsz); brows = Math.ceil(H / bsz);
     blocks = [];
     for (let y = 0; y < brows; y++) for (let x = 0; x < bcols; x++)
       blocks.push({ x, y, r: Math.random() * 0.62 + (1 - y / brows) * 0.38, g: rnd(SCRAMBLE) });
-    // Black stars for the white side of the wipe. They are fixed to the page, not the pinned screen,
-    // so they scroll with the studio section's stars and read as one sky.
-    pinLen = track.offsetHeight - hero.offsetHeight;
-    const tr = track.getBoundingClientRect();
-    const avoid = [...document.querySelectorAll('.day .kicker,.day .lede .ln,.day .cols h2,.day .cols p,.day footer > *')].map(e => {
-      const r = e.getBoundingClientRect();
-      return { x0: r.left - 14, x1: r.right + 14, y0: r.top - tr.top - 10, y1: r.bottom - tr.top + 10 };
-    });
-    dayStars = [];
-    const span = H + pinLen, n = Math.round((W * span) / 11000);
-    for (let tries = 0; dayStars.length < n && tries < n * 6; tries++) {
-      const x = Math.random() * W, y = Math.random() * span;
-      if (avoid.some(a => x > a.x0 && x < a.x1 && y > a.y0 && y < a.y1)) continue;
-      dayStars.push({ x, y, size: 10 + Math.random() * 6,
-        phase: Math.random() * 6.28, speed: 0.6 + Math.random() * 1.4, base: Math.random() < 0.15 ? 2 : Math.random() < 0.5 ? 1 : 0 });
-    }
   }
   function drawWipe(p, now) {
     const w = clamp((p - 0.15) / 0.6);
     vignette.style.opacity = (1 - w).toFixed(3);
     hero.style.pointerEvents = w > 0.98 ? 'none' : '';
+    hero.style.background = w > 0 ? 'transparent' : '';   // let the holes show the stars
     if (w <= 0) return;
     fctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     fctx.font = `500 ${bsz * 0.55}px "Geist Mono", ui-monospace, monospace`;
@@ -337,27 +323,15 @@ footer a:hover{text-decoration:underline;text-underline-offset:4px}
         fctx.globalCompositeOperation = 'source-over';
         fctx.fillStyle = `rgba(242,242,238,${(s / 0.45).toFixed(3)})`;
         fctx.fillText(b.g, px + bsz / 2, py + bsz / 2);
-      } else {                                             // then the block grows and fills to day
+      } else {                                             // then the block opens onto the starfield behind
         const k = ease(clamp((s - 0.45) / 0.55)), inset = (1 - k) * bsz * 0.5;
-        fctx.fillStyle = PAPER;
+        fctx.globalCompositeOperation = 'destination-out';
+        fctx.fillStyle = '#000';
         fctx.fillRect(px + inset, py + inset, bsz - inset * 2 + 0.5, bsz - inset * 2 + 0.5);
+        fctx.globalCompositeOperation = 'source-over';
       }
     }
     fctx.globalCompositeOperation = 'source-over';
-    const t = now / 1000;
-    const off = p * pinLen;                                // how far the page has moved under the pinned screen
-    for (const st of dayStars) {
-      const y = st.y - off;
-      if (y < -20 || y > H + 20) continue;
-      const b = blocks[clamp(Math.floor(y / bsz), 0, brows - 1) * bcols + clamp(Math.floor(st.x / bsz), 0, bcols - 1)];
-      const s = (w * 1.3 - b.r) / 0.3;
-      if (s < 1) continue;                                 // only once the block under it is white
-      const appear = clamp((s - 1) / 0.6);
-      const tw = reduce ? 0.6 : 0.5 + 0.5 * Math.sin(t * st.speed + st.phase);
-      fctx.font = `500 ${st.size}px "Geist Mono", ui-monospace, monospace`;
-      fctx.fillStyle = `rgba(10,10,10,${((0.12 + tw * 0.45) * appear).toFixed(3)})`;
-      fctx.fillText(['.', '+', '*'][Math.min(2, st.base + (tw > 0.85 ? 1 : 0))], st.x, y);
-    }
     fctx.textAlign = 'start'; fctx.textBaseline = 'top';
   }
 
@@ -438,99 +412,100 @@ footer a:hover{text-decoration:underline;text-underline-offset:4px}
     stepRot(now);
   }
 
-  // ---------- day sky: twinkling black stars and the odd shooting star ----------
-  const day = $('day'), sky = $('sky'), kctx = sky.getContext('2d');
-  let stars = [], shooters = [], SW = 0, SH = 0, sdpr = 1, skyVisible = false, nextShot = 0, lastSky = 0;
-  const STAR = ['.', '+', '*'];
-  function layoutSky() {
-    sdpr = Math.min(devicePixelRatio || 1, 2);
-    SW = day.clientWidth; SH = day.clientHeight;
-    sky.width = Math.round(SW * sdpr); sky.height = Math.round(SH * sdpr);
-    // keep stars off the words so the text stays clean
-    const d = day.getBoundingClientRect();
-    const avoid = [...day.querySelectorAll('.kicker,.lede .ln,.cols h2,.cols p,footer > *')].map(e => {
-      const r = e.getBoundingClientRect();
-      return { x0: r.left - d.left - 14, x1: r.right - d.left + 14, y0: r.top - d.top - 10, y1: r.bottom - d.top + 10 };
-    });
-    const shared = Math.max(0, track.getBoundingClientRect().bottom - d.top);   // overlap with the transition's sky
-    const count = Math.round((SW * Math.max(0, SH - shared)) / 11000);
-    stars = [];
-    for (let tries = 0; stars.length < count && tries < count * 6; tries++) {
-      const x = Math.random() * SW, y = shared + Math.random() * (SH - shared);
-      if (avoid.some(a => x > a.x0 && x < a.x1 && y > a.y0 && y < a.y1)) continue;
-      stars.push({ x, y, size: 10 + Math.random() * 6, phase: Math.random() * 6.28, speed: 0.6 + Math.random() * 1.4, base: Math.random() < 0.15 ? 2 : Math.random() < 0.5 ? 1 : 0 });
-    }
+  // ---------- background starfield: twinkling black stars and the odd shooting star ----------
+  const bg = $('starfield'), bctx = bg.getContext('2d');
+  let BW = 0, BH = 0, bdpr = 1, bgStars = [], shooters = [], nextShot = 0, lastBg = 0;
+  const SPRITES = {};                                      // glyphs drawn once, stamped many times
+  function sprite(g, size) {
+    const key = g + size;
+    if (SPRITES[key]) return SPRITES[key];
+    const c = document.createElement('canvas'), px = Math.ceil(size * 1.4 * bdpr);
+    c.width = c.height = px;
+    const x = c.getContext('2d');
+    x.scale(bdpr, bdpr); x.fillStyle = INK; x.textAlign = 'center'; x.textBaseline = 'middle';
+    x.font = `500 ${size}px "Geist Mono", ui-monospace, monospace`;
+    x.fillText(g, size * 0.7, size * 0.7);
+    return (SPRITES[key] = c);
   }
-  function launchShot(now) {
-    const fromLeft = Math.random() < 0.5;
-    const angle = (fromLeft ? 1 : -1) * (0.32 + Math.random() * 0.25);   // gentle downward slant
-    shooters.push({
-      x: fromLeft ? Math.random() * SW * 0.5 : SW * 0.5 + Math.random() * SW * 0.5,
-      y: Math.random() * SH * 0.55, angle, born: now,
-      life: 1000 + Math.random() * 600, dist: 340 + Math.random() * 300
-    });
+  function layoutBg() {
+    bdpr = Math.min(devicePixelRatio || 1, 2);
+    BW = innerWidth; BH = innerHeight;
+    bg.width = Math.round(BW * bdpr); bg.height = Math.round(BH * bdpr);
+    for (const k in SPRITES) delete SPRITES[k];
+    const n = Math.round((BW * BH) / 9000);
+    bgStars = Array.from({ length: n }, () => ({
+      x: Math.random() * BW, y: Math.random() * BH, size: [11, 13, 15][(Math.random() * 3) | 0],
+      phase: Math.random() * 6.28, speed: 0.6 + Math.random() * 1.4, base: Math.random() < 0.15 ? 2 : Math.random() < 0.5 ? 1 : 0
+    }));
   }
-  function drawSky(now) {
-    if (!skyVisible || now - lastSky < 1000 / 30) return;
-    lastSky = now;
-    kctx.setTransform(sdpr, 0, 0, sdpr, 0, 0);
-    kctx.clearRect(0, 0, SW, SH);
-    kctx.textAlign = 'center'; kctx.textBaseline = 'middle';
-    const t = now / 1000;
-    for (const st of stars) {
+  const STAR = ['.', '+', '*'], TRAIL = ['*', '=', '=', '-', '-', '-', '·', '·', '.', '.'];
+  function drawBg(now) {
+    if (now - lastBg < 1000 / 30) return;
+    lastBg = now;
+    bctx.setTransform(1, 0, 0, 1, 0, 0);
+    bctx.globalAlpha = 1; bctx.fillStyle = PAPER; bctx.fillRect(0, 0, bg.width, bg.height);
+    const t = now / 1000, drift = scrollY * 0.12;          // a slight drift as you scroll gives depth
+    for (const st of bgStars) {
       const tw = reduce ? 0.6 : 0.5 + 0.5 * Math.sin(t * st.speed + st.phase);
-      const g = STAR[Math.min(2, st.base + (tw > 0.85 ? 1 : 0))];          // brightens a step at its peak
-      kctx.font = `500 ${st.size}px "Geist Mono", ui-monospace, monospace`;
-      kctx.fillStyle = `rgba(10,10,10,${(0.12 + tw * 0.45).toFixed(3)})`;
-      kctx.fillText(g, st.x, st.y);
+      const spr = sprite(STAR[Math.min(2, st.base + (tw > 0.85 ? 1 : 0))], st.size);
+      const y = ((st.y - drift) % BH + BH) % BH;
+      bctx.globalAlpha = 0.12 + tw * 0.45;
+      bctx.drawImage(spr, (st.x - st.size * 0.7) * bdpr, (y - st.size * 0.7) * bdpr);
     }
-    if (reduce) return;
-    if (!nextShot) nextShot = now + 1500;
-    if (now > nextShot) { launchShot(now); nextShot = now + 2800 + Math.random() * 4200; }
-    kctx.font = `500 16px "Geist Mono", ui-monospace, monospace`;
-    shooters = shooters.filter(sh => {
-      const k = (now - sh.born) / sh.life;
-      if (k >= 1) return false;
-      const head = (1 - Math.pow(1 - k, 2)) * sh.dist;                  // fast start, eases out
-      const fadeOut = k > 0.7 ? 1 - (k - 0.7) / 0.3 : 1;
-      const dx = Math.cos(sh.angle) * Math.sign(sh.angle), dy = Math.abs(Math.sin(sh.angle));
-      const TRAIL = ['*', '=', '=', '-', '-', '-', '·', '·', '.', '.'];
-      for (let j = 0; j < TRAIL.length; j++) {
-        const back = j * 13;
-        if (back > head) break;
-        const px = sh.x + dx * (head - back), py = sh.y + dy * (head - back);
-        kctx.fillStyle = `rgba(10,10,10,${((1 - j / TRAIL.length) * 0.85 * fadeOut).toFixed(3)})`;
-        kctx.fillText(TRAIL[j], px, py);
+    if (!reduce) {
+      if (!nextShot) nextShot = now + 1500;
+      if (now > nextShot) {
+        const fromLeft = Math.random() < 0.5, angle = (fromLeft ? 1 : -1) * (0.32 + Math.random() * 0.25);
+        shooters.push({ x: fromLeft ? Math.random() * BW * 0.5 : BW * (0.5 + Math.random() * 0.5), y: Math.random() * BH * 0.6,
+          angle, born: now, life: 1000 + Math.random() * 600, dist: 340 + Math.random() * 300 });
+        nextShot = now + 2800 + Math.random() * 4200;
       }
-      return true;
-    });
+      shooters = shooters.filter(sh => {
+        const k = (now - sh.born) / sh.life;
+        if (k >= 1) return false;
+        const head = (1 - Math.pow(1 - k, 2)) * sh.dist, fadeOut = k > 0.7 ? 1 - (k - 0.7) / 0.3 : 1;
+        const dx = Math.cos(sh.angle) * Math.sign(sh.angle), dy = Math.abs(Math.sin(sh.angle));
+        for (let j = 0; j < TRAIL.length; j++) {
+          const back = j * 13; if (back > head) break;
+          bctx.globalAlpha = (1 - j / TRAIL.length) * 0.85 * fadeOut;
+          bctx.drawImage(sprite(TRAIL[j], 16), (sh.x + dx * (head - back) - 11) * bdpr, (sh.y + dy * (head - back) - 11) * bdpr);
+        }
+        return true;
+      });
+    }
+    bctx.globalAlpha = 1;
   }
-  new IntersectionObserver(([e]) => { skyVisible = e.isIntersecting; }).observe(day);
-  new ResizeObserver(() => layoutSky()).observe(day);
 
   // ---------- loop ----------
   const progress = () => { const r = track.getBoundingClientRect(); return clamp(-r.top / (r.height - hero.offsetHeight)); };
-  let last = 0, visible = true;
+  let last = 0, visible = true, heroDone = false;
   new IntersectionObserver(([e]) => { visible = e.isIntersecting; }).observe(track);
   function tick(now) {
     requestAnimationFrame(tick);
     drawLede(now);
-    drawSky(now);
-    if (!visible || document.hidden) return;
+    if (document.hidden) return;
+    const hr = hero.getBoundingClientRect();
+    if (!(hr.top >= 0 && hr.bottom >= innerHeight && progress() < 0.15)) drawBg(now);   // stars only when something shows them
+    if (!visible) return;
     if (now - last < 1000 / 30) return;                   // 30fps is plenty for the feed
     last = now;
     const p = progress();
+    if (p >= 0.77) {                                       // wipe finished: the hero is fully open, stop drawing it
+      if (!heroDone) { fctx.setTransform(1, 0, 0, 1, 0, 0); fctx.clearRect(0, 0, feed.width, feed.height); vignette.style.opacity = '0'; hero.style.background = 'transparent'; hero.style.pointerEvents = 'none'; heroDone = true; }
+      return;
+    }
+    heroDone = false;
     drawFeed(now, p); drawTitle(now, p); drawWipe(p, now);
   }
 
   const go = () => {
-    layout();
+    layout(); layoutBg();
     if (reduce) { video.pause(); video.currentTime = 8; }
     video.play && video.play().catch(() => {});
     requestAnimationFrame(tick);
   };
   (document.fonts ? Promise.all([document.fonts.load('600 100px "Geist"'), document.fonts.load('400 12px "Geist Mono"')]) : Promise.resolve()).then(go, go);
-  let rz; addEventListener('resize', () => { clearTimeout(rz); rz = setTimeout(layout, 120); });
+  let rz; addEventListener('resize', () => { clearTimeout(rz); rz = setTimeout(() => { layout(); layoutBg(); }, 120); });
   addEventListener('touchstart', () => video.paused && video.play().catch(() => {}), { once: true, passive: true });
 
   if (window.Lenis && !reduce) {
