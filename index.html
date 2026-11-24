@@ -39,7 +39,7 @@ html.lenis,html.lenis body{height:auto}
 .mono{font:500 11px/1.4 var(--mono);letter-spacing:.14em;text-transform:uppercase}
 
 /* ---------- HERO (pinned while it dissolves) ---------- */
-.track{position:relative;height:175vh;height:175svh}
+.track{position:relative;height:175vh;height:175svh;background:var(--paper)}
 .hero{position:sticky;top:0;height:100vh;height:100svh;min-height:520px;overflow:hidden;background:var(--ink)}
 .feed{position:absolute;inset:0;width:100%;height:100%;display:block;z-index:1}
 /* The video is only a source: it is never shown, the characters draw the picture. */
@@ -55,24 +55,35 @@ html.lenis,html.lenis body{height:auto}
 .bar a:hover span{text-decoration:underline;text-underline-offset:4px}
 
 .copy{position:absolute;z-index:3;left:max(var(--pad),env(safe-area-inset-left));right:max(var(--pad),env(safe-area-inset-right));
-  bottom:max(var(--pad),env(safe-area-inset-bottom));display:grid;grid-template-columns:1fr auto;align-items:end;gap:24px}
+  top:50%;transform:translateY(-46%)}
 .title{margin:0;font-family:var(--display);font-weight:500;font-stretch:75%;text-transform:uppercase;
-  font-size:min(27vw,24svh);line-height:.84;letter-spacing:-.01em}
+  font-size:min(24vw,23svh);line-height:.84;letter-spacing:-.01em}
 .title .ln{display:block;white-space:nowrap}
 .title .ch{display:inline-block;text-align:center}
 .sub{margin:18px 0 0;color:var(--dim)}
-.readout{display:grid;gap:6px;justify-items:end;text-align:right;color:var(--dim)}
+.readout{position:absolute;z-index:3;right:max(var(--pad),env(safe-area-inset-right));bottom:max(var(--pad),env(safe-area-inset-bottom));
+  display:grid;gap:6px;justify-items:end;text-align:right;color:var(--dim)}
 .readout .on{color:var(--paper)}
 .tick{display:inline-block;width:.6em;height:.6em;background:var(--paper);margin-right:.5em;vertical-align:.05em}
 @media (prefers-reduced-motion:no-preference){.tick{animation:blink 1.6s steps(2,start) infinite}@keyframes blink{to{opacity:.15}}}
-@media (max-width:640px){.copy{grid-template-columns:1fr}.readout{justify-items:start;text-align:left}}
+/* The studio section rides up over the hero just as the wipe finishes, so there is no blank screen between them. */
+.day{margin-top:-28vh;margin-top:-28svh}
+@media (max-width:640px){.day{margin-top:-17vh;margin-top:-17svh}}
+/* Phone: a shorter hero, title centred and as wide as the screen allows */
+@media (max-width:640px){
+  .hero{height:82vh;height:82svh;min-height:0}
+  .track{height:152vh;height:152svh}
+  .copy{text-align:center;transform:translateY(-54%)}
+  .title{font-size:min(31vw,19svh)}
+  .readout{left:0;right:0;justify-items:center;text-align:center}
+}
 
 /* ---------- STUDIO (day side) ---------- */
-.day{position:relative;z-index:1;background:var(--paper);color:var(--ink);margin-top:-1px;
+.day{position:relative;z-index:1;background:var(--paper);color:var(--ink);
   padding:clamp(24px,4vw,48px) max(var(--pad),env(safe-area-inset-right)) max(40px,env(safe-area-inset-bottom)) max(var(--pad),env(safe-area-inset-left))}
 .day ::selection{background:var(--ink);color:var(--paper)}
 .wrap{max-width:1240px;margin:0 auto}
-.statement{min-height:78vh;min-height:78svh;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center}
+.statement{display:flex;flex-direction:column;align-items:center;text-align:center;padding-top:clamp(8px,2vw,24px)}
 .kicker{color:var(--dim-ink);margin:0 0 clamp(28px,4vw,48px)}
 .lede{margin:0;font:500 clamp(34px,5.6vw,86px)/1 var(--display);font-stretch:75%;text-transform:uppercase;letter-spacing:-.005em}
 .lede .ln{display:block}
@@ -80,15 +91,18 @@ html.lenis,html.lenis body{height:auto}
 /* each word is a mask; its letters roll up into it */
 .wd{display:inline-block;overflow:hidden;vertical-align:top;padding:.08em .01em .1em;margin:-.08em -.01em -.1em;perspective:500px}
 .l{display:inline-block;transform-origin:50% 100%;backface-visibility:hidden}
-.win{display:inline-flex;align-items:center;vertical-align:top;gap:.04em;margin:0 .06em}
+.win{display:inline-flex;align-items:center;vertical-align:top;gap:.08em;margin:0 .04em}
 .win i{font-style:normal;font-weight:400}
-.win canvas{display:block;height:.74em;width:calc(var(--open,0) * 2.8em)}
+/* the word in the brackets: a one-line window that scrolls up to the next word */
+.rot{display:inline-block;height:1em;overflow:hidden;vertical-align:top;padding:0 .04em}
+.rot-in{display:flex;flex-direction:column;align-items:flex-start}
+.rot-in b{display:block;height:1em;line-height:1;font-weight:500;white-space:nowrap}
 .cols{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));margin-top:clamp(64px,9vw,120px);border-top:1px solid var(--ink)}
 .cols > div{padding:18px 24px 0 0;min-width:0}
 .cols > div + div{padding-left:24px;border-left:1px solid var(--paper-2)}
 .cols h2{margin:0 0 14px;color:var(--dim-ink)}
 .cols p{margin:0;max-width:34ch}
-@media (max-width:760px){.lede .ln{display:inline}.lede .ln::after{content:" "}.statement{min-height:70svh}.cols{grid-template-columns:1fr}.cols > div,.cols > div + div{padding:18px 0 22px;border-left:0;border-bottom:1px solid var(--paper-2)}}
+@media (max-width:760px){.lede .ln{display:inline}.lede .ln::after{content:" "}.cols{grid-template-columns:1fr}.cols > div,.cols > div + div{padding:18px 0 22px;border-left:0;border-bottom:1px solid var(--paper-2)}}
 footer{margin-top:clamp(80px,10vw,140px);display:flex;flex-wrap:wrap;justify-content:space-between;gap:10px 24px;color:var(--dim-ink)}
 footer a{text-decoration:none}
 footer a:hover{text-decoration:underline;text-underline-offset:4px}
@@ -116,12 +130,12 @@ footer a:hover{text-decoration:underline;text-underline-offset:4px}
         </h1>
         <p class="mono sub">Independent studio — games &amp; apps</p>
       </div>
-      <div class="mono readout" aria-hidden="true">
+    </div>
+    <div class="mono readout" aria-hidden="true">
         <span class="on"><i class="tick"></i>Night side · feed 01</span>
         <span id="scene">Scene 01 / 04 · Tide line</span>
         <span id="frame">00:00.00</span>
         <span>Scroll ↓</span>
-      </div>
     </div>
 
     <canvas class="wipe" id="wipe" aria-hidden="true"></canvas>
@@ -133,11 +147,11 @@ footer a:hover{text-decoration:underline;text-underline-offset:4px}
     <div class="statement">
       <p class="mono kicker">[ 01 ] The studio</p>
       <p class="lede" id="lede">
-        <span class="sr">An independent studio making games and apps, built carefully and played a lot before they ship.</span>
+        <span class="sr">An independent studio making games, apps and systems, built carefully and made to last.</span>
         <span class="ln" aria-hidden="true">An independent studio</span>
-        <span class="ln" aria-hidden="true">making <span class="win"><i>[</i><canvas id="mini"></canvas><i>]</i></span> games and apps,</span>
-        <span class="ln" aria-hidden="true">built carefully and played</span>
-        <span class="ln" aria-hidden="true">a lot before they ship.</span>
+        <span class="ln" aria-hidden="true">making <span class="win"><i>[</i><span class="rot" id="rot"><span class="rot-in"><b>Games</b><b>Apps</b><b>Systems</b><b>Games</b></span></span><i>]</i></span></span>
+        <span class="ln" aria-hidden="true">built carefully</span>
+        <span class="ln" aria-hidden="true">and made to last.</span>
       </p>
     </div>
 
@@ -253,9 +267,9 @@ footer a:hover{text-decoration:underline;text-underline-offset:4px}
         } else {                                           // the glyph's density draws the picture
           if (Math.random() < 0.04) c.j = ((Math.random() * 3) | 0) - 1;   // tiny shimmer within the ramp
           const idx = Math.max(0, Math.min(RAMP.length - 1, Math.round(b * (RAMP.length - 1)) + (c.j || 0)));
-          g = RAMP[idx]; a = 0.3 + b * 0.7;
+          g = RAMP[idx]; a = (0.22 + b * 0.78) * 0.6;    // held back so the title stays on top
         }
-        if (boost && b >= 0.04) a = Math.min(1, a + boost * 0.6);
+        if (boost && b >= 0.04) a = Math.min(1, a + boost * 0.35);
         if (glitch && Math.random() < 0.5) { g = rnd(SCRAMBLE); a = Math.min(1, a + Math.random() * 0.5); }
         const lvl = Math.max(1, Math.min(LEVELS - 1, (a * LEVELS) | 0));
         buckets[lvl].push(x, y, g);
@@ -290,7 +304,7 @@ footer a:hover{text-decoration:underline;text-underline-offset:4px}
       blocks.push({ x, y, r: Math.random() * 0.62 + (1 - y / brows) * 0.38, g: rnd(SCRAMBLE) });
   }
   function drawWipe(p) {
-    const w = clamp((p - 0.26) / 0.5);
+    const w = clamp((p - 0.24) / 0.6);
     wctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     wctx.clearRect(0, 0, W, H);
     if (w <= 0) return;
@@ -352,48 +366,40 @@ footer a:hover{text-decoration:underline;text-underline-offset:4px}
     });
   });
   letters.forEach((l, i) => { l.dataset.d = (i / letters.length) * 0.55; });
-  const win = lede.querySelector('.win'), mini = $('mini'), mctx = mini.getContext('2d');
-  const msample = document.createElement('canvas'), msctx = msample.getContext('2d', { willReadFrequently: true });
-  let ledeVisible = false, lastMini = 0;
+  const rot = $('rot'), rotIn = rot.querySelector('.rot-in'), rotWords = [...rotIn.children];
+  let ledeVisible = false, rotIdx = 0, rotW = 0, rotTarget = 0, rotOpen = 0, nextSwap = 0;
   new IntersectionObserver(([e]) => { ledeVisible = e.isIntersecting; }, { rootMargin: '20% 0px' }).observe(lede);
   const outCubic = t => 1 - Math.pow(1 - t, 3);
+  const SWAP = 2200, ROLL = 700;
+  const wordW = i => rotWords[i].scrollWidth;
+
+  function stepRot(now) {
+    if (!nextSwap) { nextSwap = now + SWAP; rotTarget = wordW(0); rotW = 0; }
+    if (!reduce && now >= nextSwap && rotOpen > 0.98) {
+      rotIdx++;
+      rotIn.style.transition = `transform ${ROLL}ms cubic-bezier(.7,0,.2,1)`;
+      rotIn.style.transform = `translateY(${-rotIdx}em)`;
+      rotTarget = wordW(rotIdx);
+      if (rotIdx === rotWords.length - 1) {                // last slot repeats the first: jump back unseen
+        setTimeout(() => { rotIn.style.transition = 'none'; rotIdx = 0; rotIn.style.transform = 'translateY(0)'; }, ROLL + 30);
+      }
+      nextSwap = now + SWAP;
+    }
+    rotW += (rotTarget - rotW) * 0.14;                     // the brackets ease to each word's width
+    rot.style.width = (rotW * rotOpen).toFixed(1) + 'px';
+  }
 
   function drawLede(now) {
     if (!ledeVisible) return;
     const r = lede.getBoundingClientRect();
-    const P = reduce ? 1 : clamp((innerHeight * 0.95 - r.top) / (innerHeight * 0.6));
+    const P = reduce ? 1 : clamp((innerHeight * 1.0 - r.top) / (innerHeight * 0.5));
     for (const l of letters) {
       const k = outCubic(clamp((P - l.dataset.d) / 0.35)), q = 1 - k;
       const tf = q < 0.001 ? 'none' : `translateY(${(q * 105).toFixed(2)}%) rotateX(${(-q * 70).toFixed(2)}deg) skewX(${(q * -12).toFixed(2)}deg)`;
       if (l.style.transform !== tf) l.style.transform = tf;
     }
-    const open = ease(clamp((P - 0.45) / 0.45));
-    win.style.setProperty('--open', open.toFixed(3));
-    if (open > 0.02 && now - lastMini > 1000 / 24) { lastMini = now; drawMini(); }
-  }
-
-  // The window holds a tiny ASCII feed of the same footage, ink on paper.
-  function drawMini() {
-    const w = mini.clientWidth, h = mini.clientHeight, d = Math.min(devicePixelRatio || 1, 2);
-    if (w < 4 || !video.videoWidth) return;
-    if (mini.width !== Math.round(w * d)) { mini.width = Math.round(w * d); mini.height = Math.round(h * d); }
-    const mfs = Math.max(5, h / 9), mcw = mfs * 0.62, mch = mfs * 1.1;
-    const mc = Math.ceil(w / mcw), mr = Math.ceil(h / mch);
-    msample.width = mc; msample.height = mr;
-    const vw = video.videoWidth, vh = video.videoHeight, target = (mc * mcw) / (mr * mch);
-    let sx = 0, sy = 0, sw = vw, sh = vh;
-    if (vw / vh > target) { sw = vh * target; sx = (vw - sw) / 2; } else { sh = vw / target; sy = (vh - sh) / 2; }
-    msctx.drawImage(video, sx, sy, sw, sh, 0, 0, mc, mr);
-    const data = msctx.getImageData(0, 0, mc, mr).data;
-    mctx.setTransform(d, 0, 0, d, 0, 0);
-    mctx.fillStyle = INK; mctx.fillRect(0, 0, w, h);
-    mctx.font = `500 ${mfs}px "Geist Mono", ui-monospace, monospace`; mctx.textBaseline = 'top';
-    mctx.fillStyle = PAPER;
-    for (let y = 0, i = 0; y < mr; y++) for (let x = 0; x < mc; x++, i++) {
-      const v = clamp((data[i * 4] / 255 - lo) / (hi - lo));
-      if (v < 0.05) continue;
-      mctx.fillText(RAMP[Math.min(RAMP.length - 1, Math.round(v * (RAMP.length - 1)))], x * mcw, y * mch);
-    }
+    rotOpen = ease(clamp((P - 0.3) / 0.4));
+    stepRot(now);
   }
 
   // ---------- loop ----------
