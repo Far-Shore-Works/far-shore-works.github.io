@@ -69,18 +69,26 @@ html.lenis,html.lenis body{height:auto}
 
 /* ---------- STUDIO (day side) ---------- */
 .day{position:relative;z-index:1;background:var(--paper);color:var(--ink);margin-top:-1px;
-  padding:clamp(72px,12vw,160px) max(var(--pad),env(safe-area-inset-right)) max(40px,env(safe-area-inset-bottom)) max(var(--pad),env(safe-area-inset-left))}
+  padding:clamp(24px,4vw,48px) max(var(--pad),env(safe-area-inset-right)) max(40px,env(safe-area-inset-bottom)) max(var(--pad),env(safe-area-inset-left))}
 .day ::selection{background:var(--ink);color:var(--paper)}
 .wrap{max-width:1240px;margin:0 auto}
-.kicker{color:var(--dim-ink);margin:0 0 28px}
-.lede{margin:0;max-width:17ch;font:500 clamp(36px,6.2vw,92px)/.95 var(--display);font-stretch:75%;text-transform:uppercase;letter-spacing:-.005em;text-wrap:balance}
-.lede .w{display:inline-block}
+.statement{min-height:78vh;min-height:78svh;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center}
+.kicker{color:var(--dim-ink);margin:0 0 clamp(28px,4vw,48px)}
+.lede{margin:0;font:500 clamp(34px,5.6vw,86px)/1 var(--display);font-stretch:75%;text-transform:uppercase;letter-spacing:-.005em}
+.lede .ln{display:block}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+/* each word is a mask; its letters roll up into it */
+.wd{display:inline-block;overflow:hidden;vertical-align:top;padding:.08em .01em .1em;margin:-.08em -.01em -.1em;perspective:500px}
+.l{display:inline-block;transform-origin:50% 100%;backface-visibility:hidden}
+.win{display:inline-flex;align-items:center;vertical-align:top;gap:.04em;margin:0 .06em}
+.win i{font-style:normal;font-weight:400}
+.win canvas{display:block;height:.74em;width:calc(var(--open,0) * 2.8em)}
 .cols{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));margin-top:clamp(64px,9vw,120px);border-top:1px solid var(--ink)}
 .cols > div{padding:18px 24px 0 0;min-width:0}
 .cols > div + div{padding-left:24px;border-left:1px solid var(--paper-2)}
 .cols h2{margin:0 0 14px;color:var(--dim-ink)}
 .cols p{margin:0;max-width:34ch}
-@media (max-width:760px){.cols{grid-template-columns:1fr}.cols > div,.cols > div + div{padding:18px 0 22px;border-left:0;border-bottom:1px solid var(--paper-2)}}
+@media (max-width:760px){.lede .ln{display:inline}.lede .ln::after{content:" "}.statement{min-height:70svh}.cols{grid-template-columns:1fr}.cols > div,.cols > div + div{padding:18px 0 22px;border-left:0;border-bottom:1px solid var(--paper-2)}}
 footer{margin-top:clamp(80px,10vw,140px);display:flex;flex-wrap:wrap;justify-content:space-between;gap:10px 24px;color:var(--dim-ink)}
 footer a{text-decoration:none}
 footer a:hover{text-decoration:underline;text-underline-offset:4px}
@@ -122,8 +130,16 @@ footer a:hover{text-decoration:underline;text-underline-offset:4px}
 
 <main class="day" id="day">
   <div class="wrap">
-    <p class="mono kicker">[ 01 ] The studio</p>
-    <p class="lede" id="lede">An independent studio making games and apps, built carefully and played a lot before they ship.</p>
+    <div class="statement">
+      <p class="mono kicker">[ 01 ] The studio</p>
+      <p class="lede" id="lede">
+        <span class="sr">An independent studio making games and apps, built carefully and played a lot before they ship.</span>
+        <span class="ln" aria-hidden="true">An independent studio</span>
+        <span class="ln" aria-hidden="true">making <span class="win"><i>[</i><canvas id="mini"></canvas><i>]</i></span> games and apps,</span>
+        <span class="ln" aria-hidden="true">built carefully and played</span>
+        <span class="ln" aria-hidden="true">a lot before they ship.</span>
+      </p>
+    </div>
 
     <section class="cols" aria-label="About the studio">
       <div>
@@ -167,7 +183,7 @@ footer a:hover{text-decoration:underline;text-underline-offset:4px}
   const ease = t => t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
 
   // ---------- grid ----------
-  let W, H, dpr, fs, cw, chH, cols, rows, cells, keepOut, start = performance.now();
+  let W, H, dpr, fs, cw, chH, cols, rows, cells, start = performance.now();
   function layout() {
     dpr = Math.min(devicePixelRatio || 1, 2);
     W = hero.clientWidth; H = hero.clientHeight;
@@ -181,12 +197,6 @@ footer a:hover{text-decoration:underline;text-underline-offset:4px}
       const y = (i / cols) | 0;
       cells[i] = { b: 0, ch: rnd(FAINT), j: 0, born: Math.random() * 0.9 + (y / rows) * 0.25, out: Math.random(), star: Math.random() < 0.012 ? Math.random() : 0 };
     }
-    // Characters thin out around the text so it always reads.
-    const h = hero.getBoundingClientRect();
-    const lineRect = ln => { const a = ln.firstElementChild.getBoundingClientRect(), b = ln.lastElementChild.getBoundingClientRect(); return { left: a.left, right: b.right, top: a.top, bottom: a.bottom }; };
-    keepOut = [...[...title.querySelectorAll('.ln')].map(l => [lineRect(l), 8, 0.35]), ...[...hero.querySelectorAll('.sub,.readout > *,.bar > *')].map(e => [e.getBoundingClientRect(), 10, 0.08])].map(([r, m, f]) => {
-      return { x0: (r.left - h.left - m) / cw, x1: (r.right - h.left + m) / cw, y0: (r.top - h.top - m) / chH, y1: (r.bottom - h.top + m) / chH, f };
-    });
     buildWipe();
     lockTitle();
   }
@@ -247,7 +257,6 @@ footer a:hover{text-decoration:underline;text-underline-offset:4px}
         }
         if (boost && b >= 0.04) a = Math.min(1, a + boost * 0.6);
         if (glitch && Math.random() < 0.5) { g = rnd(SCRAMBLE); a = Math.min(1, a + Math.random() * 0.5); }
-        for (const k of keepOut) if (x > k.x0 && x < k.x1 && y > k.y0 && y < k.y1) { a *= k.f; break; }
         const lvl = Math.max(1, Math.min(LEVELS - 1, (a * LEVELS) | 0));
         buckets[lvl].push(x, y, g);
       }
@@ -326,24 +335,66 @@ footer a:hover{text-decoration:underline;text-underline-offset:4px}
     rest.forEach(e => e.style.opacity = (reduce ? 1 - clamp((p - 0.02) / 0.12) : o).toFixed(3));
   }
 
-  // ---------- studio lede: words decode in when they come into view ----------
-  const lede = $('lede'), words = [];
-  lede.innerHTML = lede.textContent.split(' ').map(w => `<span class="w">${w}</span>`).join(' ');
-  lede.querySelectorAll('.w').forEach(w => { w.dataset.c = w.textContent; words.push(w); });
-  let ledeStart = null;
-  new IntersectionObserver(([e], o) => { if (e.isIntersecting) { ledeStart = performance.now(); o.disconnect(); } }, { threshold: 0.35 }).observe(lede);
-  function drawLede(now) {
-    if (ledeStart === null || reduce) return;
-    const t = (now - ledeStart) / 900;
-    if (t > 2) return;
-    words.forEach((w, i) => {
-      const k = (t - i * 0.05) / 0.5;
-      const c = w.dataset.c;
-      const txt = k >= 1 ? c : k <= 0 ? c.replace(/./g, ' ') : [...c].map((ch, j) => (j / c.length) < k ? ch : rnd(SCRAMBLE)).join('');
-      if (w.textContent !== txt) w.textContent = txt;
+  // ---------- studio statement: letters roll up into place as you scroll (like TRACE) ----------
+  const lede = $('lede'), letters = [];
+  lede.querySelectorAll('.ln').forEach(ln => {
+    [...ln.childNodes].forEach(node => {
+      if (node.nodeType !== 3) return;                     // leave the bracket window alone
+      const frag = document.createDocumentFragment();
+      node.textContent.split(/(\s+)/).forEach(part => {
+        if (!part) return;
+        if (/^\s+$/.test(part)) { frag.appendChild(document.createTextNode(' ')); return; }
+        const wd = document.createElement('span'); wd.className = 'wd';
+        [...part].forEach(ch => { const l = document.createElement('span'); l.className = 'l'; l.textContent = ch; wd.appendChild(l); letters.push(l); });
+        frag.appendChild(wd);
+      });
+      node.replaceWith(frag);
     });
+  });
+  letters.forEach((l, i) => { l.dataset.d = (i / letters.length) * 0.55; });
+  const win = lede.querySelector('.win'), mini = $('mini'), mctx = mini.getContext('2d');
+  const msample = document.createElement('canvas'), msctx = msample.getContext('2d', { willReadFrequently: true });
+  let ledeVisible = false, lastMini = 0;
+  new IntersectionObserver(([e]) => { ledeVisible = e.isIntersecting; }, { rootMargin: '20% 0px' }).observe(lede);
+  const outCubic = t => 1 - Math.pow(1 - t, 3);
+
+  function drawLede(now) {
+    if (!ledeVisible) return;
+    const r = lede.getBoundingClientRect();
+    const P = reduce ? 1 : clamp((innerHeight * 0.95 - r.top) / (innerHeight * 0.6));
+    for (const l of letters) {
+      const k = outCubic(clamp((P - l.dataset.d) / 0.35)), q = 1 - k;
+      const tf = q < 0.001 ? 'none' : `translateY(${(q * 105).toFixed(2)}%) rotateX(${(-q * 70).toFixed(2)}deg) skewX(${(q * -12).toFixed(2)}deg)`;
+      if (l.style.transform !== tf) l.style.transform = tf;
+    }
+    const open = ease(clamp((P - 0.45) / 0.45));
+    win.style.setProperty('--open', open.toFixed(3));
+    if (open > 0.02 && now - lastMini > 1000 / 24) { lastMini = now; drawMini(); }
   }
-  if (!reduce) words.forEach(w => { w.style.minWidth = w.getBoundingClientRect().width + 'px'; w.textContent = w.dataset.c.replace(/./g, ' '); });
+
+  // The window holds a tiny ASCII feed of the same footage, ink on paper.
+  function drawMini() {
+    const w = mini.clientWidth, h = mini.clientHeight, d = Math.min(devicePixelRatio || 1, 2);
+    if (w < 4 || !video.videoWidth) return;
+    if (mini.width !== Math.round(w * d)) { mini.width = Math.round(w * d); mini.height = Math.round(h * d); }
+    const mfs = Math.max(5, h / 9), mcw = mfs * 0.62, mch = mfs * 1.1;
+    const mc = Math.ceil(w / mcw), mr = Math.ceil(h / mch);
+    msample.width = mc; msample.height = mr;
+    const vw = video.videoWidth, vh = video.videoHeight, target = (mc * mcw) / (mr * mch);
+    let sx = 0, sy = 0, sw = vw, sh = vh;
+    if (vw / vh > target) { sw = vh * target; sx = (vw - sw) / 2; } else { sh = vw / target; sy = (vh - sh) / 2; }
+    msctx.drawImage(video, sx, sy, sw, sh, 0, 0, mc, mr);
+    const data = msctx.getImageData(0, 0, mc, mr).data;
+    mctx.setTransform(d, 0, 0, d, 0, 0);
+    mctx.fillStyle = INK; mctx.fillRect(0, 0, w, h);
+    mctx.font = `500 ${mfs}px "Geist Mono", ui-monospace, monospace`; mctx.textBaseline = 'top';
+    mctx.fillStyle = PAPER;
+    for (let y = 0, i = 0; y < mr; y++) for (let x = 0; x < mc; x++, i++) {
+      const v = clamp((data[i * 4] / 255 - lo) / (hi - lo));
+      if (v < 0.05) continue;
+      mctx.fillText(RAMP[Math.min(RAMP.length - 1, Math.round(v * (RAMP.length - 1)))], x * mcw, y * mch);
+    }
+  }
 
   // ---------- loop ----------
   const progress = () => { const r = track.getBoundingClientRect(); return clamp(-r.top / (r.height - innerHeight)); };
