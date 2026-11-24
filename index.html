@@ -92,7 +92,7 @@ html.lenis,html.lenis body{height:auto}
 .starfield{position:fixed;inset:0;width:100%;height:100%;z-index:0;pointer-events:none;display:block}
 .statement{display:flex;flex-direction:column;align-items:center;text-align:center;padding-top:clamp(8px,2vw,24px)}
 .kicker{color:var(--dim-ink);margin:0 0 clamp(28px,4vw,48px)}
-.lede{margin:0;font:600 clamp(28px,4.6vw,72px)/1.02 var(--display);text-transform:uppercase;letter-spacing:-.045em}
+.lede{margin:0;font:600 clamp(34px,6.4vw,108px)/1 var(--display);text-transform:uppercase;letter-spacing:-.045em}
 .lede .ln{display:block}
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 /* each word is a mask; its letters roll up into it */
@@ -108,8 +108,12 @@ html.lenis,html.lenis body{height:auto}
 .day ::selection{background:var(--lav-wash);color:var(--ink)}
 /* three tall rows that alternate left and right down the page */
 .rows{display:grid;gap:clamp(140px,22vh,260px);margin-top:clamp(140px,22vh,260px)}
-.blk{width:min(560px,50%);min-width:0}
-.blk:nth-child(even){margin-left:auto}
+.blk{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:clamp(32px,6vw,96px);align-items:center}
+.blk .txt{max-width:560px;min-width:0}
+.blk:nth-child(even) .txt{order:2}
+.art{min-width:0;display:flex;justify-content:center}
+.icon{display:block;width:100%;max-width:460px;aspect-ratio:4/3}
+.blk .art.reveal{transition-delay:.1s}
 .idx{margin:0 0 22px;padding-top:14px;border-top:1px solid var(--ink);color:var(--dim-ink)}
 .head{margin:0;font:600 clamp(40px,5.4vw,80px)/.96 var(--display);text-transform:uppercase;letter-spacing:-.045em}
 .body{margin:26px 0 0;max-width:38ch;font-size:clamp(17px,1.35vw,20px);line-height:1.55}
@@ -122,8 +126,10 @@ html.lenis,html.lenis body{height:auto}
 @media (max-width:760px){
   .lede .ln{display:inline}.lede .ln::after{content:" "}
   .rows{gap:clamp(96px,16vh,140px);margin-top:clamp(96px,16vh,140px)}
-  .blk{width:auto}
-  .blk:nth-child(even){margin-left:16%}
+  .blk{grid-template-columns:1fr;gap:20px}
+  .blk:nth-child(even) .txt{order:0}
+  .art{order:-1;justify-content:flex-start}
+  .icon{max-width:300px}
 }
 footer{margin-top:clamp(140px,22vh,240px);display:flex;flex-wrap:wrap;justify-content:space-between;gap:10px 24px;color:var(--dim-ink)}
 footer a{text-decoration:none}
@@ -181,19 +187,28 @@ footer a:hover{text-decoration:underline;text-underline-offset:4px}
 
     <section class="rows" aria-label="About the studio">
       <article class="blk">
-        <p class="mono idx reveal"><span class="n">[ 02 ]</span> What we make</p>
-        <h2 class="head">Games, apps<br>&amp; systems</h2>
-        <p class="body reveal">Games for PC come first. Around them we build apps and the systems that run underneath, plus smaller experiments for phones and Roblox when an idea fits.</p>
+        <div class="txt">
+          <p class="mono idx reveal"><span class="n">[ 02 ]</span> What we make</p>
+          <h2 class="head">Games, apps<br>&amp; systems</h2>
+          <p class="body reveal">Games for PC come first. Around them we build apps and the systems that run underneath, plus smaller experiments for phones and Roblox when an idea fits.</p>
+        </div>
+        <div class="art reveal"><canvas class="icon" data-icon="cube" aria-hidden="true"></canvas></div>
       </article>
       <article class="blk">
-        <p class="mono idx reveal"><span class="n">[ 03 ]</span> Right now</p>
-        <h2 class="head">Our first<br>game</h2>
-        <p class="body reveal">It's in development now. We'll show it here when it's ready, and until then the work happens in the open on <a href="https://github.com/Far-Shore-Works">GitHub</a>.</p>
+        <div class="txt">
+          <p class="mono idx reveal"><span class="n">[ 03 ]</span> Right now</p>
+          <h2 class="head">Our first<br>game</h2>
+          <p class="body reveal">It's in development now. We'll show it here when it's ready, and until then the work happens in the open on <a href="https://github.com/Far-Shore-Works">GitHub</a>.</p>
+        </div>
+        <div class="art reveal"><canvas class="icon" data-icon="planet" aria-hidden="true"></canvas></div>
       </article>
       <article class="blk">
-        <p class="mono idx reveal"><span class="n">[ 04 ]</span> Who we are</p>
-        <h2 class="head">Two people,<br>one studio</h2>
-        <p class="body reveal">Far Shore Works is a two-person independent studio with roots in Louisiana. A small team, so every project gets our full attention.</p>
+        <div class="txt">
+          <p class="mono idx reveal"><span class="n">[ 04 ]</span> Who we are</p>
+          <h2 class="head">Two people,<br>one studio</h2>
+          <p class="body reveal">Far Shore Works is a two-person independent studio with roots in Louisiana. A small team, so every project gets our full attention.</p>
+        </div>
+        <div class="art reveal"><canvas class="icon" data-icon="binary" aria-hidden="true"></canvas></div>
       </article>
     </section>
 
@@ -413,28 +428,35 @@ void main(){
   });
   letters.forEach((l, i) => { l.dataset.d = (i / letters.length) * 0.55; });
   const rot = $('rot'), rotIn = rot.querySelector('.rot-in'), rotWords = [...rotIn.children];
-  let ledeVisible = false, rotIdx = 0, rotW = 0, rotTarget = 0, rotOpen = 0, nextSwap = 0;
+  let ledeVisible = false, rotIdx = 0, rotW = 0, rotTarget = 0, rotOpen = 0, nextSwap = 0, rotPhase = 'idle', rotNext = 0, rotT = 0;
   new IntersectionObserver(([e]) => { ledeVisible = e.isIntersecting; }, { rootMargin: '20% 0px' }).observe(lede);
   const outCubic = t => 1 - Math.pow(1 - t, 3);
   const SWAP = 2200, ROLL = 700;
-  const wordW = i => rotWords[i].scrollWidth;
+  const wordW = i => rotWords[i].getBoundingClientRect().width + 2;   // measured only at swaps
 
   function stepRot(now) {
     if (!nextSwap) { nextSwap = now + SWAP; rotTarget = wordW(0); rotW = 0; }
-    if (!reduce && now >= nextSwap && rotOpen > 0.98) {
-      rotIdx++;
+    if (!reduce && rotPhase === 'idle' && now >= nextSwap && rotOpen > 0.98) {
+      rotNext = rotIdx + 1;                                // 1. open the brackets wide enough for both words
+      rotTarget = Math.max(wordW(rotIdx), wordW(rotNext));
+      rotPhase = 'grow';
+    } else if (rotPhase === 'grow' && Math.abs(rotW - rotTarget) < 1) {
+      rotIdx = rotNext;                                    // 2. roll to the next word: nothing gets clipped
       rotIn.style.transition = `transform ${ROLL}ms cubic-bezier(.7,0,.2,1)`;
       rotIn.style.transform = `translateY(${-rotIdx}em)`;
-      rotTarget = wordW(rotIdx);
+      rotPhase = 'roll'; rotT = now;
+    } else if (rotPhase === 'roll' && now - rotT > ROLL + 30) {
       if (rotIdx === rotWords.length - 1) {                // last slot repeats the first: jump back unseen
-        setTimeout(() => { rotIn.style.transition = 'none'; rotIdx = 0; rotIn.style.transform = 'translateY(0)'; }, ROLL + 30);
+        rotIn.style.transition = 'none'; rotIdx = 0; rotIn.style.transform = 'translateY(0)';
       }
-      nextSwap = now + SWAP;
+      rotTarget = wordW(rotIdx);                           // 3. settle to the new word's width
+      rotPhase = 'idle'; nextSwap = now + SWAP;
     }
-    rotW += (rotTarget - rotW) * 0.14;                     // the brackets ease to each word's width
+    rotW += (rotTarget - rotW) * 0.2;
     const rw = (rotW * rotOpen).toFixed(1) + 'px';
     if (rot.style.width !== rw) rot.style.width = rw;
   }
+
 
   function drawLede(now, sy) {
     if (!ledeVisible) return;
@@ -549,6 +571,156 @@ void main(){
     }
   }
 
+  // ---------- animated ASCII icons for the three rows ----------
+  // Each icon is a tiny 3D scene. Every character cell asks "what's here and how lit is it?"
+  // and gets a denser or lighter glyph to match. Drawn only while on screen.
+  const ICON_RAMP = ' .:-=+*#%@', ICON_LAV = '#8b78e6';
+  const icons = [...document.querySelectorAll('.icon')].map(cv => ({ cv, ctx: cv.getContext('2d'), kind: cv.dataset.icon, on: false, cache: {}, last: 0 }));
+  const iconIO = new IntersectionObserver(es => es.forEach(e => { const ic = icons.find(i => i.cv === e.target); if (ic) ic.on = e.isIntersecting; }), { rootMargin: '15% 0px' });
+  icons.forEach(ic => iconIO.observe(ic.cv));
+  function layoutIcons() {
+    for (const ic of icons) {
+      const w = ic.cv.clientWidth, h = ic.cv.clientHeight; if (!w || !h) continue;
+      ic.d = Math.min(devicePixelRatio || 1, 2);
+      ic.cv.width = Math.round(w * ic.d); ic.cv.height = Math.round(h * ic.d);
+      ic.cols = w < 360 ? 38 : 46; ic.cw = w / ic.cols; ic.fs = ic.cw / 0.62; ic.ch = ic.fs * 1.15;
+      ic.rows = Math.floor(h / ic.ch); ic.w = w; ic.h = h; ic.U = Math.min(w, h) / 2.25; ic.cache = {};
+      ic.g = new Array(ic.cols * ic.rows); ic.c = new Uint8Array(ic.cols * ic.rows); ic.a = new Float32Array(ic.cols * ic.rows);
+    }
+  }
+  new ResizeObserver(() => layoutIcons()).observe(document.querySelector('.rows'));
+  function iconGlyph(ic, g, col) {
+    const key = g + col;
+    if (ic.cache[key]) return ic.cache[key];
+    const c = document.createElement('canvas');
+    c.width = Math.ceil(ic.cw * ic.d) + 1; c.height = Math.ceil(ic.ch * ic.d) + 1;
+    const x = c.getContext('2d'); x.scale(ic.d, ic.d);
+    x.fillStyle = col ? ICON_LAV : INK; x.textAlign = 'center'; x.textBaseline = 'middle';
+    x.font = `500 ${ic.fs}px "Geist Mono", ui-monospace, monospace`;
+    x.fillText(g, ic.cw / 2, ic.ch / 2);
+    return (ic.cache[key] = c);
+  }
+  const norm = v => { const l = Math.hypot(v[0], v[1], v[2]) || 1; return [v[0] / l, v[1] / l, v[2] / l]; };
+  const dot = (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+  const LIGHT = norm([-0.5, 0.55, -0.7]);
+  const lit = n => Math.max(0, dot(n, LIGHT));
+  // R = Ry(b) * Rx(a), row-major
+  const rotM = (a, b) => { const ca = Math.cos(a), sa = Math.sin(a), cb = Math.cos(b), sb = Math.sin(b);
+    return [cb, sb * sa, sb * ca, 0, ca, -sa, -sb, cb * sa, cb * ca]; };
+  const mul = (m, v) => [m[0] * v[0] + m[1] * v[1] + m[2] * v[2], m[3] * v[0] + m[4] * v[1] + m[5] * v[2], m[6] * v[0] + m[7] * v[1] + m[8] * v[2]];
+  const mulT = (m, v) => [m[0] * v[0] + m[3] * v[1] + m[6] * v[2], m[1] * v[0] + m[4] * v[1] + m[7] * v[2], m[2] * v[0] + m[5] * v[1] + m[8] * v[2]];
+
+  // what we make: a shaded cube turning slowly, edges picked out in purple
+  function shadeCube(x, y, t, st) {
+    const S = 0.7, o = mulT(st.R, [x, y, -5]), d = mulT(st.R, [0, 0, 1]);
+    let tmin = -1e9, tmax = 1e9, axis = -1;
+    for (let k = 0; k < 3; k++) {
+      if (Math.abs(d[k]) < 1e-6) { if (o[k] < -S || o[k] > S) return null; continue; }
+      let t1 = (-S - o[k]) / d[k], t2 = (S - o[k]) / d[k];
+      if (t1 > t2) { const q = t1; t1 = t2; t2 = q; }
+      if (t1 > tmin) { tmin = t1; axis = k; }
+      if (t2 < tmax) tmax = t2;
+    }
+    if (tmin > tmax || axis < 0) return null;
+    const p = [o[0] + d[0] * tmin, o[1] + d[1] * tmin, o[2] + d[2] * tmin];
+    const nl = [0, 0, 0]; nl[axis] = -Math.sign(d[axis]);
+    const near = p.filter(c => S - Math.abs(c) < 0.07).length;
+    if (near >= 2) return [1, 1];                          // edge
+    return [0.1 + 0.72 * Math.pow(lit(mul(st.R, nl)), 1.3), 0];
+  }
+  // right now: a ringed planet turning, a small moon going round it
+  const RING_N = norm([0.22, 0.78, -0.58]);
+  const RING_E1 = norm([1, -RING_N[0] / RING_N[1], 0]);
+  const RING_E2 = norm([RING_N[1] * RING_E1[2] - RING_N[2] * RING_E1[1], RING_N[2] * RING_E1[0] - RING_N[0] * RING_E1[2], RING_N[0] * RING_E1[1] - RING_N[1] * RING_E1[0]]);
+  function shadePlanet(x, y, t, st) {
+    const R = 0.62; let best = null, bt = 1e9;
+    const r2 = x * x + y * y;
+    if (r2 < R * R) {
+      const z = -Math.sqrt(R * R - r2), n = [x / R, y / R, z / R];
+      const lat = Math.asin(Math.max(-1, Math.min(1, dot(n, RING_N))));
+      const lon = Math.atan2(dot(n, RING_E1), dot(n, RING_E2)) + t * 0.4;
+      const band = 0.72 + 0.28 * Math.sin(lat * 11 + 1.3 * Math.sin(lon * 2));
+      bt = z + 5; best = [(0.1 + 0.9 * lit(n)) * band, 0];
+    }
+    const tr = -dot([x, y, -5], RING_N) / RING_N[2];      // ring plane
+    const rp = [x, y, -5 + tr], rr = Math.hypot(rp[0], rp[1], rp[2]);
+    if (rr > 0.86 && rr < 1.3 && tr < bt) { bt = tr; best = [0.42 + 0.3 * (0.5 + 0.5 * Math.sin(rr * 38)), 1]; }
+    const m = st.moon, dx = x - m[0], dy = y - m[1], mr = 0.13;
+    if (dx * dx + dy * dy < mr * mr) {
+      const z = m[2] - Math.sqrt(mr * mr - dx * dx - dy * dy);
+      if (z + 5 < bt) best = [0.2 + 0.8 * lit([dx / mr, dy / mr, (z - m[2]) / mr]), 0];
+    }
+    return best;
+  }
+  // who we are: two stars circling one another
+  function shadeBinary(x, y, t, st) {
+    let best = null, bt = 1e9;
+    for (const [c, col] of st.stars) {
+      const dx = x - c[0], dy = y - c[1], r = 0.36;
+      if (dx * dx + dy * dy < r * r) {
+        const z = c[2] - Math.sqrt(r * r - dx * dx - dy * dy);
+        if (z < bt) { bt = z; best = [0.18 + 0.82 * lit([dx / r, dy / r, (z - c[2]) / r]), col]; }
+      }
+    }
+    return best;
+  }
+  const orbit = (a, rO) => [rO * Math.cos(a), rO * Math.sin(a) * 0.34, rO * Math.sin(a)];
+
+  function drawIcon(ic, now) {
+    if (!ic.cols) return;
+    const t = reduce ? 1.2 : now / 1000;
+    const st = {};
+    if (ic.kind === 'cube') st.R = rotM(t * 0.45 + 0.5, t * 0.6 + 0.6);
+    if (ic.kind === 'planet') { const a = t * 0.55; st.moon = [1.45 * (Math.cos(a) * RING_E1[0] + Math.sin(a) * RING_E2[0]), 1.45 * (Math.cos(a) * RING_E1[1] + Math.sin(a) * RING_E2[1]), 1.45 * (Math.cos(a) * RING_E1[2] + Math.sin(a) * RING_E2[2])]; }
+    if (ic.kind === 'binary') { const a = t * 0.8; const A = orbit(a, 0.82); st.stars = [[A, 0], [[-A[0], -A[1], -A[2]], 1]]; st.a = a; }
+    const shade = ic.kind === 'cube' ? shadeCube : ic.kind === 'planet' ? shadePlanet : shadeBinary;
+    const { cols, rows, cw, ch, U, g, c, a } = ic;
+    g.fill(' ');
+    for (let j = 0, i = 0; j < rows; j++) {
+      const y = -((j + 0.5) - rows / 2) * ch / U;
+      for (let k = 0; k < cols; k++, i++) {
+        const x = ((k + 0.5) - cols / 2) * cw / U;
+        const r = shade(x, y, t, st);
+        if (!r || r[0] < 0.03) continue;
+        g[i] = ICON_RAMP[Math.min(9, 1 + Math.floor(r[0] * 9))]; c[i] = r[1]; a[i] = 0.35 + 0.65 * r[0];
+      }
+    }
+    const put = (px, py, gl, col, al) => {                 // overlay a single glyph at a scene point
+      const k = Math.floor(px * U / cw + cols / 2), j = Math.floor(-py * U / ch + rows / 2);
+      if (k < 0 || k >= cols || j < 0 || j >= rows) return;
+      const i = j * cols + k; if (g[i] !== ' ') return;
+      g[i] = gl; c[i] = col; a[i] = al;
+    };
+    if (ic.kind === 'binary') {
+      for (let s = 0; s < 64; s++) { const p = orbit(s / 64 * Math.PI * 2, 0.82); put(p[0], p[1], '.', 0, 0.18); }
+      for (let q = 1; q <= 14; q++) {                      // fading trails behind each star
+        const p = orbit(st.a - q * 0.085, 0.82), al = 0.75 * (1 - q / 15);
+        put(p[0], p[1], q < 5 ? ':' : '.', 0, al); put(-p[0], -p[1], q < 5 ? ':' : '.', 1, al);
+      }
+      put(0, 0, '+', 1, 0.6);
+    }
+    if (ic.kind === 'planet') for (let s = 0; s < 22; s++) {          // a few fixed background stars
+      const h = Math.sin(s * 91.7) * 43758.5453, fx = (h - Math.floor(h)) * 2 - 1, h2 = Math.sin(s * 17.3) * 9631.7, fy = (h2 - Math.floor(h2)) * 2 - 1;
+      put(fx * 1.9, fy * 1.3, s % 5 ? '.' : '+', s % 4 ? 0 : 1, 0.25 + 0.25 * Math.sin(t * 1.3 + s));
+    }
+    const ctx = ic.ctx;
+    ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.clearRect(0, 0, ic.cv.width, ic.cv.height);
+    for (let j = 0, i = 0; j < rows; j++) for (let k = 0; k < cols; k++, i++) {
+      if (g[i] === ' ') continue;
+      ctx.globalAlpha = a[i];
+      ctx.drawImage(iconGlyph(ic, g[i], c[i]), Math.round(k * cw * ic.d), Math.round(j * ch * ic.d));
+    }
+    ctx.globalAlpha = 1;
+  }
+  function drawIcons(now) {
+    for (const ic of icons) {
+      if (!ic.on && ic.last) continue;
+      if (now - ic.last < 1000 / 30) continue;
+      ic.last = now;
+      drawIcon(ic, now);
+    }
+  }
+
   // ---------- loop ----------
   // Geometry is measured once (and again on resize or when fonts/images change the layout),
   // so the per-frame work only does maths on the scroll position and never forces a layout.
@@ -574,6 +746,7 @@ void main(){
     const p = progress(sy);
     drawLede(now, sy);
     drawHeads(sy);
+    drawIcons(now);
     const heroCovers = p < 0.15 && sy >= G.track - 1 && G.heroH >= VH;
     if (!heroCovers) drawBg(now);                          // stars only when something shows them
     if (!visible) return;
@@ -598,7 +771,7 @@ void main(){
   }
 
   const go = () => {
-    layout(); layoutBg(); initGL(); measure();
+    layout(); layoutBg(); initGL(); layoutIcons(); measure();
     if (reduce) { video.pause(); video.currentTime = 8; }
     video.play && video.play().catch(() => {});
     requestAnimationFrame(tick);
