@@ -185,13 +185,10 @@ footer a:hover{text-decoration:underline;text-underline-offset:4px}
   const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
   const $ = id => document.getElementById(id);
   const track = $('track'), hero = $('hero'), feed = $('feed'), vignette = hero.querySelector('.vignette'), video = $('src'), title = $('title'), frameEl = $('frame'), sceneEl = $('scene');
-  const fctx = feed.getContext('2d');
   const sample = document.createElement('canvas');
   const sctx = sample.getContext('2d', { willReadFrequently: true });
 
   const INK = '#0a0a0a', PAPER = '#f2f2ee';
-  const ALNUM = 'ABCDEFGHJKLMNPQRSTUVWXYZ0123456789';
-  const DENSE = '#%@$&8B';
   const FAINT = '.:·';
   const SCRAMBLE = '#%&*+=/<>[]01XZ';
   const rnd = s => s[(Math.random() * s.length) | 0];
@@ -199,140 +196,152 @@ footer a:hover{text-decoration:underline;text-underline-offset:4px}
   const ease = t => t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
 
   // ---------- grid ----------
-  let W, H, dpr, fs, cw, chH, cols, rows, cells, start = performance.now();
+  let W, H, dpr, fs, cw, chH, rows, bsz, brows, start = performance.now();
   function layout() {
     dpr = Math.min(devicePixelRatio || 1, 2);
     W = hero.clientWidth; H = hero.clientHeight;
-    for (const c of [feed]) { c.width = Math.round(W * dpr); c.height = Math.round(H * dpr); }
+    feed.width = Math.round(W * dpr); feed.height = Math.round(H * dpr);
     fs = W < 640 ? 8 : W < 1100 ? 9.5 : 10.5;
     cw = fs * 0.62; chH = fs * 1.25;
-    cols = Math.ceil(W / cw); rows = Math.ceil(H / chH);
-    sample.width = cols; sample.height = rows;
-    cells = new Array(cols * rows);
-    for (let i = 0; i < cells.length; i++) {
-      const y = (i / cols) | 0;
-      cells[i] = { b: 0, ch: rnd(FAINT), j: 0, born: Math.random() * 0.9 + (y / rows) * 0.25, out: Math.random(), star: Math.random() < 0.012 ? Math.random() : 0 };
-    }
-    buildWipe();
+    rows = Math.ceil(H / chH);
+    bsz = W < 640 ? 22 : 30; brows = Math.ceil(H / bsz);
     lockTitle();
   }
 
-  // Cover-fit the video into the grid's aspect.
-  function sampleFrame() {
-    const vw = video.videoWidth, vh = video.videoHeight;
-    if (!vw) return null;
-    const target = (cols * cw) / (rows * chH), src = vw / vh;
-    let sx = 0, sy = 0, sw = vw, sh = vh;
-    if (src > target) { sw = vh * target; sx = (vw - sw) / 2; } else { sh = vw / target; sy = (vh - sh) / 2; }
-    sctx.drawImage(video, sx, sy, sw, sh, 0, 0, cols, rows);
-    return sctx.getImageData(0, 0, cols, rows).data;
-  }
-
-  // ---------- ASCII feed ----------
+  // ---------- ASCII feed + pixel wipe, drawn on the graphics card ----------
+  // Each character cell samples the video, picks a glyph whose density matches the brightness,
+  // and the wipe opens blocks onto the starfield behind. One pass per frame, almost no CPU.
   const SCENES = [[0, 'Tide line'], [6.08, 'Moonrise'], [11.54, 'Low sun'], [17.42, 'Flare']];
   const RAMP = "`.-':_,^=;><+!rc*/z?sLTv)J7(|Fi{C}fI31tlu[neoZ5Yxjya]2ESwqkP6h9d4VpOGbUAKXHm8RD#$Bg0MNWQ%&@";
-  const LEVELS = 16;
-  const buckets = Array.from({ length: LEVELS }, () => []);
+  const ATLAS = RAMP + SCRAMBLE + FAINT + '+';
+  const IDX = { rampLen: RAMP.length, scr: RAMP.length, scrLen: SCRAMBLE.length, faint: RAMP.length + SCRAMBLE.length, plus: ATLAS.length - 1 };
   const hist = new Uint32Array(64);
   let lo = 0.05, hi = 0.7, scene = 0, glitchUntil = 0;
 
-  function levels(data) {                                  // auto-levels so flat footage still has shape
+  const gl = feed.getContext('webgl', { premultipliedAlpha: true, alpha: true, antialias: false });
+  let U = {}, texVideo, texAtlas, AG = [16, 1], AUSE = [1, 1], lastTex = 0, lastLv = 0, glReady = false;
+  const VS = 'attribute vec2 a;void main(){gl_Position=vec4(a,0.,1.);}';
+  const FS = `precision highp float;
+uniform sampler2D uVideo,uAtlas;uniform vec2 uRes,uCell,uAG,uAUse;uniform vec4 uCover;
+uniform float uLo,uHi,uTime,uIntro,uFade,uSweep,uGlitch,uWipe,uBlock,uBRows,uHasVideo,uRampLen,uScr,uScrLen,uFaint,uPlus;
+const vec3 INK=vec3(.0392),PAPER=vec3(.949,.949,.933);
+float hash(vec2 p){p=fract(p*vec2(123.34,456.21));p+=dot(p,p+45.32);return fract(p.x*p.y);}
+float glyph(float i,vec2 l){float c=mod(i,uAG.x),r=floor(i/uAG.x);return texture2D(uAtlas,(vec2(c,r)+l)*uAUse).a;}
+float eio(float t){return t<.5?4.*t*t*t:1.-pow(-2.*t+2.,3.)/2.;}
+void main(){
+  vec2 f=vec2(gl_FragCoord.x,uRes.y-gl_FragCoord.y);
+  vec2 cell=floor(f/uCell),luv=fract(f/uCell);
+  float h1=hash(cell),h2=hash(cell+17.31),h3=hash(cell+91.7),m=0.;
+  if(h1*.9+(cell.y*uCell.y/uRes.y)*.25<=uIntro*1.15&&h2>=1.-uFade){
+    vec2 suv=(cell+.5)*uCell/uRes;
+    float v=uHasVideo>.5?texture2D(uVideo,uCover.xy+suv*uCover.zw).r:0.;
+    v=pow(clamp((v-uLo)/max(uHi-uLo,.05),0.,1.),1.1);
+    float a,i;
+    if(v<.04){
+      if(h3<.012){a=.18+.4*(.5+.5*sin(uTime/.9+h3*4000.));i=h3<.006?uPlus:uFaint;}
+      else{a=.05;i=uFaint+floor(hash(cell+floor(uTime*.3+h1*9.))*3.);}
+    }else{
+      float t=floor(uTime*1.3+h2*13.);
+      float j=hash(cell+t+.5)<.35?floor(hash(cell+t)*3.)-1.:0.;
+      i=clamp(floor(v*(uRampLen-1.)+.5)+j,0.,uRampLen-1.);
+      a=(.22+v*.78)*.6;
+      float n=abs(cell.y-uSweep);if(n<4.)a=min(1.,a+(1.-n/4.)*.12);
+    }
+    if(uGlitch>.5){float g=floor(uTime*30.);if(hash(cell+g)<.5){i=uScr+floor(hash(cell+g+3.3)*uScrLen);a=min(1.,a+hash(cell+g+7.7)*.5);}}
+    m=glyph(i,luv)*a;
+  }
+  vec3 col=mix(INK,PAPER,m);float o=1.;
+  if(uWipe>0.){
+    vec2 b=floor(f/uBlock),bl=fract(f/uBlock);
+    float r=hash(b+41.3)*.62+(1.-b.y/uBRows)*.38,s=(uWipe*1.3-r)/.3;
+    if(s>0.){
+      if(s<.45){vec2 gs=vec2(.341,.6875),g2=(bl-(.5-gs*.5))/gs;
+        if(g2.x>=0.&&g2.x<=1.&&g2.y>=0.&&g2.y<=1.)col=mix(col,PAPER,glyph(uScr+floor(hash(b+7.1)*uScrLen),g2)*(s/.45));}
+      else{float k=eio(clamp((s-.45)/.55,0.,1.)),q=(1.-k)*.5;if(bl.x>=q&&bl.x<=1.-q&&bl.y>=q&&bl.y<=1.-q)o=0.;}
+    }
+  }
+  gl_FragColor=vec4(col*o,o);
+}`;
+  function initGL() {
+    if (!gl) return;
+    const sh = (type, src) => { const x = gl.createShader(type); gl.shaderSource(x, src); gl.compileShader(x); return x; };
+    const prog = gl.createProgram();
+    gl.attachShader(prog, sh(gl.VERTEX_SHADER, VS)); gl.attachShader(prog, sh(gl.FRAGMENT_SHADER, FS));
+    gl.linkProgram(prog);
+    if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) { console.warn(gl.getProgramInfoLog(prog)); return; }
+    gl.useProgram(prog);
+    const buf = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW);
+    const loc = gl.getAttribLocation(prog, 'a'); gl.enableVertexAttribArray(loc); gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
+    for (const n of ['uVideo','uAtlas','uRes','uCell','uAG','uAUse','uCover','uLo','uHi','uTime','uIntro','uFade','uSweep','uGlitch','uWipe','uBlock','uBRows','uHasVideo','uRampLen','uScr','uScrLen','uFaint','uPlus'])
+      U[n] = gl.getUniformLocation(prog, n);
+    const tex = () => { const t = gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D, t);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR); return t; };
+    texVideo = tex(); texAtlas = tex();
+    // glyph atlas: every character drawn once, white on transparent
+    const GW = 32, GH = 64, cols = 16, rowsA = Math.ceil(ATLAS.length / cols);
+    const ac = document.createElement('canvas'); ac.width = cols * GW; ac.height = rowsA * GH;
+    const ax = ac.getContext('2d'); ax.fillStyle = '#fff'; ax.textBaseline = 'top'; ax.font = '400 51px "Geist Mono", ui-monospace, Menlo, monospace';
+    [...ATLAS].forEach((ch, k) => ax.fillText(ch, (k % cols) * GW, Math.floor(k / cols) * GH));
+    gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D, texAtlas);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, ac);
+    AG = [cols, rowsA]; AUSE = [1 / cols, 1 / rowsA];
+    gl.uniform1i(U.uVideo, 0); gl.uniform1i(U.uAtlas, 1);
+    gl.uniform1f(U.uRampLen, IDX.rampLen); gl.uniform1f(U.uScr, IDX.scr); gl.uniform1f(U.uScrLen, IDX.scrLen);
+    gl.uniform1f(U.uFaint, IDX.faint); gl.uniform1f(U.uPlus, IDX.plus);
+    gl.uniform2f(U.uAG, AG[0], AG[1]); gl.uniform2f(U.uAUse, AUSE[0], AUSE[1]);
+    gl.clearColor(0, 0, 0, 0);
+    glReady = true;
+  }
+
+  function levels() {                                      // auto-levels so flat footage still has shape
+    const vw = video.videoWidth; if (!vw) return;
+    sample.width = 64; sample.height = 36;
+    sctx.drawImage(video, 0, 0, 64, 36);
+    const d = sctx.getImageData(0, 0, 64, 36).data, n = 64 * 36;
     hist.fill(0);
-    const n = cols * rows;
-    for (let i = 0; i < n; i++) hist[data[i * 4] >> 2]++;
+    for (let i = 0; i < n; i++) hist[d[i * 4] >> 2]++;
     const pick = q => { let acc = 0, t = n * q; for (let b = 0; b < 64; b++) { acc += hist[b]; if (acc >= t) return b / 63; } return 1; };
-    lo += (pick(0.04) - lo) * 0.12;
-    hi += (Math.max(pick(0.995), lo + 0.25) - hi) * 0.12;
+    lo += (pick(0.04) - lo) * 0.3;
+    hi += (Math.max(pick(0.995), lo + 0.25) - hi) * 0.3;
   }
 
-  function drawFeed(now, p) {
-    const data = sampleFrame();
-    if (data) levels(data);
-    const intro = reduce ? 1 : clamp((now - start) / 1600);
-    const fade = 1 - clamp((p - 0.04) / 0.32);             // the feed thins out as you scroll
-    const sweep = reduce ? -99 : (((now - start) / 7000) % 1) * (rows + 40) - 20;   // a slow scan line
-    const glitch = now < glitchUntil;
-    for (const b of buckets) b.length = 0;
-    for (let y = 0, i = 0; y < rows; y++) {
-      const near = Math.abs(y - sweep), boost = near < 4 ? (1 - near / 4) * 0.35 : 0;
-      for (let x = 0; x < cols; x++, i++) {
-        const c = cells[i];
-        if (c.born > intro * 1.15) continue;
-        if (c.out < (1 - fade)) continue;
-        let v = data ? clamp((data[i * 4] / 255 - lo) / (hi - lo)) : 0;
-        v = Math.pow(v, 1.1);
-        c.b += (v - c.b) * 0.4;                            // ease between frames so motion stays smooth
-        let a, g, b = c.b;
-        if (b < 0.04) {                                    // night: near-empty, a few stars
-          if (c.star) { a = 0.18 + 0.4 * (0.5 + 0.5 * Math.sin(now / 900 + c.star * 40)); g = c.star > 0.5 ? '+' : '.'; }
-          else { a = 0.05; if (Math.random() < 0.003) c.ch = rnd(FAINT); g = c.ch; }
-        } else {                                           // the glyph's density draws the picture
-          if (Math.random() < 0.04) c.j = ((Math.random() * 3) | 0) - 1;   // tiny shimmer within the ramp
-          const idx = Math.max(0, Math.min(RAMP.length - 1, Math.round(b * (RAMP.length - 1)) + (c.j || 0)));
-          g = RAMP[idx]; a = (0.22 + b * 0.78) * 0.6;    // held back so the title stays on top
-        }
-        if (boost && b >= 0.04) a = Math.min(1, a + boost * 0.35);
-        if (glitch && Math.random() < 0.5) { g = rnd(SCRAMBLE); a = Math.min(1, a + Math.random() * 0.5); }
-        const lvl = Math.max(1, Math.min(LEVELS - 1, (a * LEVELS) | 0));
-        buckets[lvl].push(x, y, g);
-      }
+  function renderFeed(now, p) {
+    if (!glReady) return;
+    const vw = video.videoWidth, vh = video.videoHeight, has = vw > 0 && video.readyState >= 2;
+    if (has && now - lastTex > 1000 / 30) {
+      lastTex = now;
+      gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, texVideo);
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, video);
     }
-    fctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    fctx.globalCompositeOperation = 'source-over';
-    fctx.fillStyle = INK; fctx.fillRect(0, 0, W, H);
-    fctx.font = `400 ${fs}px "Geist Mono", ui-monospace, Menlo, monospace`;
-    fctx.textBaseline = 'top';
-    for (let l = 1; l < LEVELS; l++) {
-      const bk = buckets[l]; if (!bk.length) continue;
-      fctx.fillStyle = `rgba(242,242,238,${(l / (LEVELS - 1)).toFixed(3)})`;
-      for (let k = 0; k < bk.length; k += 3) fctx.fillText(bk[k + 2], bk[k] * cw, bk[k + 1] * chH);
-    }
-
-    if (video.duration) {
-      const t = video.currentTime;
-      let sc = 0; for (let k = 0; k < SCENES.length; k++) if (t >= SCENES[k][0]) sc = k;
-      if (sc !== scene) { scene = sc; glitchUntil = now + 320; sceneEl.textContent = `Scene ${String(sc + 1).padStart(2, '0')} / 04 · ${SCENES[sc][1]}`; }
-      const mm = Math.floor(t / 60), ss = t % 60;
-      frameEl.textContent = `${String(mm).padStart(2, '0')}:${ss.toFixed(2).padStart(5, '0')}`;
-    }
+    if (has && now - lastLv > 120) { lastLv = now; levels(); }
+    let cx = 0, cy = 0, sx = 1, sy = 1;                      // cover-fit the video to the hero
+    if (has) { const target = W / H, src = vw / vh; if (src > target) { sx = target / src; cx = (1 - sx) / 2; } else { sy = src / target; cy = (1 - sy) / 2; } }
+    const t = reduce ? 8 : (now - start) / 1000;
+    gl.viewport(0, 0, feed.width, feed.height);
+    gl.uniform2f(U.uRes, feed.width, feed.height);
+    gl.uniform2f(U.uCell, cw * dpr, chH * dpr);
+    gl.uniform4f(U.uCover, cx, cy, sx, sy);
+    gl.uniform1f(U.uLo, lo); gl.uniform1f(U.uHi, hi);
+    gl.uniform1f(U.uTime, t);
+    gl.uniform1f(U.uIntro, reduce ? 1 : clamp((now - start) / 1600));
+    gl.uniform1f(U.uFade, 1 - clamp((p - 0.04) / 0.32));
+    gl.uniform1f(U.uSweep, reduce ? -99 : (((now - start) / 7000) % 1) * (rows + 40) - 20);
+    gl.uniform1f(U.uGlitch, now < glitchUntil ? 1 : 0);
+    gl.uniform1f(U.uWipe, clamp((p - 0.15) / 0.6));
+    gl.uniform1f(U.uBlock, bsz * dpr); gl.uniform1f(U.uBRows, brows);
+    gl.uniform1f(U.uHasVideo, has ? 1 : 0);
+    gl.drawArrays(gl.TRIANGLES, 0, 3);
   }
 
-  // ---------- pixel wipe: night to day ----------
-  let blocks, bsz, bcols, brows;
-  function buildWipe() {
-    bsz = W < 640 ? 22 : 30;
-    bcols = Math.ceil(W / bsz); brows = Math.ceil(H / bsz);
-    blocks = [];
-    for (let y = 0; y < brows; y++) for (let x = 0; x < bcols; x++)
-      blocks.push({ x, y, r: Math.random() * 0.62 + (1 - y / brows) * 0.38, g: rnd(SCRAMBLE) });
-  }
-  function drawWipe(p, now) {
-    const w = clamp((p - 0.15) / 0.6);
-    vignette.style.opacity = (1 - w).toFixed(3);
-    hero.style.pointerEvents = w > 0.98 ? 'none' : '';
-    hero.style.background = w > 0 ? 'transparent' : '';   // let the holes show the stars
-    if (w <= 0) return;
-    fctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    fctx.font = `500 ${bsz * 0.55}px "Geist Mono", ui-monospace, monospace`;
-    fctx.textAlign = 'center'; fctx.textBaseline = 'middle';
-    for (const b of blocks) {
-      const s = (w * 1.3 - b.r) / 0.3;
-      if (s <= 0) continue;
-      const px = b.x * bsz, py = b.y * bsz;
-      if (s < 0.45) {                                      // a glyph flickers on first
-        fctx.globalCompositeOperation = 'source-over';
-        fctx.fillStyle = `rgba(242,242,238,${(s / 0.45).toFixed(3)})`;
-        fctx.fillText(b.g, px + bsz / 2, py + bsz / 2);
-      } else {                                             // then the block opens onto the starfield behind
-        const k = ease(clamp((s - 0.45) / 0.55)), inset = (1 - k) * bsz * 0.5;
-        fctx.globalCompositeOperation = 'destination-out';
-        fctx.fillStyle = '#000';
-        fctx.fillRect(px + inset, py + inset, bsz - inset * 2 + 0.5, bsz - inset * 2 + 0.5);
-        fctx.globalCompositeOperation = 'source-over';
-      }
-    }
-    fctx.globalCompositeOperation = 'source-over';
-    fctx.textAlign = 'start'; fctx.textBaseline = 'top';
+  function updateReadout(now) {
+    if (!video.duration) return;
+    const t = video.currentTime;
+    let sc = 0; for (let k = 0; k < SCENES.length; k++) if (t >= SCENES[k][0]) sc = k;
+    if (sc !== scene) { scene = sc; glitchUntil = now + 320; sceneEl.textContent = `Scene ${String(sc + 1).padStart(2, '0')} / 04 · ${SCENES[sc][1]}`; }
+    const mm = Math.floor(t / 60), ss = t % 60;
+    frameEl.textContent = `${String(mm).padStart(2, '0')}:${ss.toFixed(2).padStart(5, '0')}`;
   }
 
   // ---------- title: decodes in, breaks apart on the way out ----------
@@ -440,8 +449,6 @@ footer a:hover{text-decoration:underline;text-underline-offset:4px}
   }
   const STAR = ['.', '+', '*'], TRAIL = ['*', '=', '=', '-', '-', '-', '·', '·', '.', '.'];
   function drawBg(now) {
-    if (now - lastBg < 1000 / 30) return;
-    lastBg = now;
     bctx.setTransform(1, 0, 0, 1, 0, 0);
     bctx.globalAlpha = 1; bctx.fillStyle = PAPER; bctx.fillRect(0, 0, bg.width, bg.height);
     const t = now / 1000, drift = scrollY * 0.12;          // a slight drift as you scroll gives depth
@@ -484,22 +491,27 @@ footer a:hover{text-decoration:underline;text-underline-offset:4px}
     requestAnimationFrame(tick);
     drawLede(now);
     if (document.hidden) return;
-    const hr = hero.getBoundingClientRect();
-    if (!(hr.top >= 0 && hr.bottom >= innerHeight && progress() < 0.15)) drawBg(now);   // stars only when something shows them
-    if (!visible) return;
-    if (now - last < 1000 / 30) return;                   // 30fps is plenty for the feed
-    last = now;
     const p = progress();
+    const hr = hero.getBoundingClientRect();
+    if (!(hr.top >= 0 && hr.bottom >= innerHeight && p < 0.15)) drawBg(now);   // stars only when something shows them
+    if (!visible) return;
     if (p >= 0.77) {                                       // wipe finished: the hero is fully open, stop drawing it
-      if (!heroDone) { fctx.setTransform(1, 0, 0, 1, 0, 0); fctx.clearRect(0, 0, feed.width, feed.height); vignette.style.opacity = '0'; hero.style.background = 'transparent'; hero.style.pointerEvents = 'none'; heroDone = true; }
+      if (!heroDone) { if (glReady) gl.clear(gl.COLOR_BUFFER_BIT); vignette.style.opacity = '0'; hero.style.background = 'transparent'; hero.style.pointerEvents = 'none'; heroDone = true; }
       return;
     }
     heroDone = false;
-    drawFeed(now, p); drawTitle(now, p); drawWipe(p, now);
+    if (now - last >= 1000 / 30) { last = now; drawTitle(now, p); updateReadout(now); }
+    renderFeed(now, p);                                    // every frame, on the graphics card
+    const w = clamp((p - 0.15) / 0.6);
+    vignette.style.opacity = (1 - w).toFixed(3);
+    hero.style.pointerEvents = w > 0.98 ? 'none' : '';
+    hero.style.background = w > 0 ? 'transparent' : '';   // let the opened blocks show the stars
+    if (!glReady) hero.style.opacity = (1 - w).toFixed(3); // no WebGL: simply fade the hero out
   }
 
+
   const go = () => {
-    layout(); layoutBg();
+    layout(); layoutBg(); initGL();
     if (reduce) { video.pause(); video.currentTime = 8; }
     video.play && video.play().catch(() => {});
     requestAnimationFrame(tick);
