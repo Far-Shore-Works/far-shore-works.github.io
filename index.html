@@ -72,11 +72,9 @@ html.lenis,html.lenis body{height:auto}
 @media (prefers-reduced-motion:no-preference){.tick{animation:blink 1.6s steps(2,start) infinite}@keyframes blink{to{opacity:.15}}}
 /* The wipe turns the screen fully white first; the studio section then rises in from below. */
 .day{z-index:3;margin-top:-38vh;margin-top:-38svh;min-height:100vh;min-height:100svh}
-@media (max-width:640px){.day{margin-top:-20vh;margin-top:-20svh}}
 /* Phone: a shorter hero, title centred and as wide as the screen allows */
 @media (max-width:640px){
-  .hero{height:82vh;height:82svh;min-height:0}
-  .track{height:172vh;height:172svh}
+  .hero{min-height:0}
   .copy{text-align:center;transform:translateY(-54%)}
   .title{font-size:min(22vw,15svh)}
   .readout{left:0;right:0;justify-items:center;text-align:center}
@@ -128,8 +126,9 @@ html.lenis,html.lenis body{height:auto}
   .rows{gap:clamp(96px,16vh,140px);margin-top:clamp(96px,16vh,140px)}
   .blk{grid-template-columns:1fr;gap:20px}
   .blk:nth-child(even) .txt{order:0}
-  .art{order:-1;justify-content:flex-start}
-  .icon{max-width:300px}
+  .blk .txt,.blk:nth-child(even) .txt{order:0;max-width:none}
+  .art,.blk:nth-child(even) .art{order:1;justify-content:flex-start}
+  .icon{max-width:300px;margin:0}
 }
 footer{margin-top:clamp(140px,22vh,240px);display:flex;flex-wrap:wrap;justify-content:space-between;gap:10px 24px;color:var(--dim-ink)}
 footer a{text-decoration:none}
