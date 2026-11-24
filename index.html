@@ -39,13 +39,12 @@ html.lenis,html.lenis body{height:auto}
 .mono{font:500 11px/1.4 var(--mono);letter-spacing:.14em;text-transform:uppercase}
 
 /* ---------- HERO (pinned while it dissolves) ---------- */
-.track{position:relative;height:175vh;height:175svh;background:var(--paper)}
-.hero{position:sticky;top:0;height:100vh;height:100svh;min-height:520px;overflow:hidden;background:var(--ink)}
+.track{position:relative;z-index:2;height:175vh;height:175svh;pointer-events:none}
+.hero{position:sticky;top:0;height:100vh;height:100svh;min-height:520px;overflow:hidden;pointer-events:auto}
 .feed{position:absolute;inset:0;width:100%;height:100%;display:block;z-index:1}
 /* The video is only a source: it is never shown, the characters draw the picture. */
 #src{position:absolute;width:2px;height:2px;opacity:0;pointer-events:none}
 .vignette{position:absolute;inset:0;z-index:2;pointer-events:none;background:radial-gradient(130% 100% at 55% 45%,transparent 60%,rgba(10,10,10,.7))}
-.wipe{position:absolute;inset:0;width:100%;height:100%;display:block;z-index:4;pointer-events:none}
 
 .bar{position:absolute;z-index:3;left:0;right:0;top:0;display:flex;justify-content:space-between;align-items:center;
   padding:max(var(--pad),env(safe-area-inset-top)) max(var(--pad),env(safe-area-inset-right)) 0 max(var(--pad),env(safe-area-inset-left))}
@@ -66,9 +65,10 @@ html.lenis,html.lenis body{height:auto}
 .readout .on{color:var(--paper)}
 .tick{display:inline-block;width:.6em;height:.6em;background:var(--paper);margin-right:.5em;vertical-align:.05em}
 @media (prefers-reduced-motion:no-preference){.tick{animation:blink 1.6s steps(2,start) infinite}@keyframes blink{to{opacity:.15}}}
-/* The studio section rides up over the hero just as the wipe finishes, so there is no blank screen between them. */
-.day{margin-top:-28vh;margin-top:-28svh}
-@media (max-width:640px){.day{margin-top:-17vh;margin-top:-17svh}}
+/* The studio section sits directly behind the pinned hero; the pixel wipe punches through to it. */
+.day{margin-top:-100vh;margin-top:-100svh;min-height:100vh;min-height:100svh}
+@media (min-height:0) and (max-height:519px){.day{margin-top:-520px}}
+@media (max-width:640px){.day{margin-top:-82vh;margin-top:-82svh}}
 /* Phone: a shorter hero, title centred and as wide as the screen allows */
 @media (max-width:640px){
   .hero{height:82vh;height:82svh;min-height:0}
@@ -140,7 +140,6 @@ footer a:hover{text-decoration:underline;text-underline-offset:4px}
         <span>Scroll ↓</span>
     </div>
 
-    <canvas class="wipe" id="wipe" aria-hidden="true"></canvas>
   </header>
 </div>
 
@@ -185,8 +184,8 @@ footer a:hover{text-decoration:underline;text-underline-offset:4px}
 (() => {
   const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
   const $ = id => document.getElementById(id);
-  const track = $('track'), hero = $('hero'), feed = $('feed'), wipe = $('wipe'), video = $('src'), title = $('title'), frameEl = $('frame'), sceneEl = $('scene');
-  const fctx = feed.getContext('2d'), wctx = wipe.getContext('2d');
+  const track = $('track'), hero = $('hero'), feed = $('feed'), vignette = hero.querySelector('.vignette'), video = $('src'), title = $('title'), frameEl = $('frame'), sceneEl = $('scene');
+  const fctx = feed.getContext('2d');
   const sample = document.createElement('canvas');
   const sctx = sample.getContext('2d', { willReadFrequently: true });
 
@@ -204,7 +203,7 @@ footer a:hover{text-decoration:underline;text-underline-offset:4px}
   function layout() {
     dpr = Math.min(devicePixelRatio || 1, 2);
     W = hero.clientWidth; H = hero.clientHeight;
-    for (const c of [feed, wipe]) { c.width = Math.round(W * dpr); c.height = Math.round(H * dpr); }
+    for (const c of [feed]) { c.width = Math.round(W * dpr); c.height = Math.round(H * dpr); }
     fs = W < 640 ? 8 : W < 1100 ? 9.5 : 10.5;
     cw = fs * 0.62; chH = fs * 1.25;
     cols = Math.ceil(W / cw); rows = Math.ceil(H / chH);
@@ -279,7 +278,8 @@ footer a:hover{text-decoration:underline;text-underline-offset:4px}
       }
     }
     fctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    fctx.clearRect(0, 0, W, H);
+    fctx.globalCompositeOperation = 'source-over';
+    fctx.fillStyle = INK; fctx.fillRect(0, 0, W, H);
     fctx.font = `400 ${fs}px "Geist Mono", ui-monospace, Menlo, monospace`;
     fctx.textBaseline = 'top';
     for (let l = 1; l < LEVELS; l++) {
@@ -308,24 +308,29 @@ footer a:hover{text-decoration:underline;text-underline-offset:4px}
   }
   function drawWipe(p) {
     const w = clamp((p - 0.24) / 0.6);
-    wctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    wctx.clearRect(0, 0, W, H);
+    vignette.style.opacity = (1 - w).toFixed(3);
+    hero.style.pointerEvents = w > 0.98 ? 'none' : '';
     if (w <= 0) return;
-    wctx.font = `500 ${bsz * 0.55}px "Geist Mono", ui-monospace, monospace`;
-    wctx.textAlign = 'center'; wctx.textBaseline = 'middle';
+    fctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    fctx.font = `500 ${bsz * 0.55}px "Geist Mono", ui-monospace, monospace`;
+    fctx.textAlign = 'center'; fctx.textBaseline = 'middle';
     for (const b of blocks) {
       const s = (w * 1.25 - b.r) / 0.22;
       if (s <= 0) continue;
       const px = b.x * bsz, py = b.y * bsz;
       if (s < 0.45) {                                      // a glyph flickers on first
-        wctx.fillStyle = `rgba(242,242,238,${(s / 0.45).toFixed(3)})`;
-        wctx.fillText(b.g, px + bsz / 2, py + bsz / 2);
-      } else {                                             // then the block fills to day
+        fctx.globalCompositeOperation = 'source-over';
+        fctx.fillStyle = `rgba(242,242,238,${(s / 0.45).toFixed(3)})`;
+        fctx.fillText(b.g, px + bsz / 2, py + bsz / 2);
+      } else {                                             // then the block opens onto the studio section
         const k = ease(clamp((s - 0.45) / 0.55)), inset = (1 - k) * bsz * 0.28;
-        wctx.fillStyle = PAPER;
-        wctx.fillRect(px + inset, py + inset, bsz - inset * 2 + 0.5, bsz - inset * 2 + 0.5);
+        fctx.globalCompositeOperation = 'destination-out';
+        fctx.fillStyle = '#000';                           // fully opaque, so the hole is clean
+        fctx.fillRect(px + inset, py + inset, bsz - inset * 2 + 0.5, bsz - inset * 2 + 0.5);
       }
     }
+    fctx.globalCompositeOperation = 'source-over';
+    fctx.textAlign = 'start'; fctx.textBaseline = 'top';
   }
 
   // ---------- title: decodes in, breaks apart on the way out ----------
@@ -475,7 +480,7 @@ footer a:hover{text-decoration:underline;text-underline-offset:4px}
   new ResizeObserver(() => layoutSky()).observe(day);
 
   // ---------- loop ----------
-  const progress = () => { const r = track.getBoundingClientRect(); return clamp(-r.top / (r.height - innerHeight)); };
+  const progress = () => { const r = track.getBoundingClientRect(); return clamp(-r.top / (r.height - hero.offsetHeight)); };
   let last = 0, visible = true;
   new IntersectionObserver(([e]) => { visible = e.isIntersecting; }).observe(track);
   function tick(now) {
