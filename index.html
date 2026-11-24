@@ -39,11 +39,17 @@ html.lenis,html.lenis body{height:auto}
 .mono{font:500 11px/1.4 var(--mono);letter-spacing:.14em;text-transform:uppercase}
 
 /* ---------- HERO (pinned while it dissolves) ---------- */
-.track{position:relative;height:260vh;height:260svh}
+.track{position:relative;height:175vh;height:175svh}
 .hero{position:sticky;top:0;height:100vh;height:100svh;min-height:520px;overflow:hidden;background:var(--ink)}
-.feed{position:absolute;inset:0;width:100%;height:100%;display:block}
+.feed{position:absolute;inset:0;width:100%;height:100%;display:block;z-index:1}
+/* The real footage runs underneath the characters, dimmed and drained to greyscale. */
+#src{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:0;pointer-events:none;
+  filter:grayscale(1) contrast(1.25) brightness(.8);opacity:0;transition:opacity 1.4s ease}
+#src.on{opacity:.34}
+.scan{position:absolute;inset:0;z-index:1;pointer-events:none;
+  background:repeating-linear-gradient(to bottom,rgba(10,10,10,.55) 0 1px,transparent 1px 3px),
+             radial-gradient(120% 90% at 50% 45%,transparent 55%,rgba(10,10,10,.75))}
 .wipe{position:absolute;inset:0;width:100%;height:100%;display:block;z-index:4;pointer-events:none}
-#src{position:absolute;width:2px;height:2px;opacity:0;pointer-events:none}
 
 .bar{position:absolute;z-index:3;left:0;right:0;top:0;display:flex;justify-content:space-between;align-items:center;
   padding:max(var(--pad),env(safe-area-inset-top)) max(var(--pad),env(safe-area-inset-right)) 0 max(var(--pad),env(safe-area-inset-left))}
@@ -88,10 +94,11 @@ footer a:hover{text-decoration:underline;text-underline-offset:4px}
 
 <div class="track" id="track">
   <header class="hero" id="hero">
-    <canvas class="feed" id="feed" aria-hidden="true"></canvas>
     <video id="src" muted loop playsinline autoplay preload="auto" aria-hidden="true">
       <source src="assets/hero-ascii.mp4" type="video/mp4">
     </video>
+    <div class="scan" aria-hidden="true"></div>
+    <canvas class="feed" id="feed" aria-hidden="true"></canvas>
 
     <div class="bar">
       <span class="mono mark">[<b>F</b>S<b>W</b>]</span>
@@ -107,7 +114,8 @@ footer a:hover{text-decoration:underline;text-underline-offset:4px}
       </div>
       <div class="mono readout" aria-hidden="true">
         <span class="on"><i class="tick"></i>Night side · feed 01</span>
-        <span id="frame">Frame 0000</span>
+        <span id="scene">Scene 01 / 04 · Tide line</span>
+        <span id="frame">00:00.00</span>
         <span>Scroll ↓</span>
       </div>
     </div>
@@ -148,7 +156,7 @@ footer a:hover{text-decoration:underline;text-underline-offset:4px}
 (() => {
   const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
   const $ = id => document.getElementById(id);
-  const track = $('track'), hero = $('hero'), feed = $('feed'), wipe = $('wipe'), video = $('src'), title = $('title'), frameEl = $('frame');
+  const track = $('track'), hero = $('hero'), feed = $('feed'), wipe = $('wipe'), video = $('src'), title = $('title'), frameEl = $('frame'), sceneEl = $('scene');
   const fctx = feed.getContext('2d'), wctx = wipe.getContext('2d');
   const sample = document.createElement('canvas');
   const sctx = sample.getContext('2d', { willReadFrequently: true });
@@ -179,7 +187,7 @@ footer a:hover{text-decoration:underline;text-underline-offset:4px}
     }
     // Characters thin out around the text so it always reads.
     const h = hero.getBoundingClientRect();
-    keepOut = [[title, 20, 0.25], ...[...hero.querySelectorAll('.sub,.readout,.bar > *')].map(e => [e, 14, 0.05])].map(([e, m, f]) => {
+    keepOut = [[title, 10, 0.5], ...[...hero.querySelectorAll('.sub,.readout,.bar > *')].map(e => [e, 14, 0.05])].map(([e, m, f]) => {
       const r = e.getBoundingClientRect();
       return { x0: (r.left - h.left - m) / cw, x1: (r.right - h.left + m) / cw, y0: (r.top - h.top - m) / chH, y1: (r.bottom - h.top + m) / chH, f };
     });
@@ -199,44 +207,74 @@ footer a:hover{text-decoration:underline;text-underline-offset:4px}
   }
 
   // ---------- ASCII feed ----------
-  const LEVELS = 14;
+  const SCENES = [[0, 'Tide line'], [6.08, 'Moonrise'], [11.54, 'Low sun'], [17.42, 'Flare']];
+  const RAMP = ' .,:;-=+*';                               // low tones: light punctuation
+  const LEVELS = 16;
   const buckets = Array.from({ length: LEVELS }, () => []);
+  const hist = new Uint32Array(64);
+  let lo = 0.05, hi = 0.7, scene = 0, glitchUntil = 0;
+
+  function levels(data) {                                  // auto-levels so flat footage still has shape
+    hist.fill(0);
+    const n = cols * rows;
+    for (let i = 0; i < n; i++) hist[data[i * 4] >> 2]++;
+    const pick = q => { let acc = 0, t = n * q; for (let b = 0; b < 64; b++) { acc += hist[b]; if (acc >= t) return b / 63; } return 1; };
+    lo += (pick(0.04) - lo) * 0.12;
+    hi += (Math.max(pick(0.995), lo + 0.25) - hi) * 0.12;
+  }
+
   function drawFeed(now, p) {
     const data = sampleFrame();
+    if (data) levels(data);
     const intro = reduce ? 1 : clamp((now - start) / 1600);
-    const fade = 1 - clamp((p - 0.05) / 0.6);              // the feed thins out as you scroll
+    const fade = 1 - clamp((p - 0.04) / 0.32);             // the feed thins out as you scroll
+    const sweep = reduce ? -99 : (((now - start) / 7000) % 1) * (rows + 40) - 20;   // a slow scan line
+    const glitch = now < glitchUntil;
     for (const b of buckets) b.length = 0;
     for (let y = 0, i = 0; y < rows; y++) {
+      const near = Math.abs(y - sweep), boost = near < 4 ? (1 - near / 4) * 0.35 : 0;
       for (let x = 0; x < cols; x++, i++) {
         const c = cells[i];
         if (c.born > intro * 1.15) continue;
         if (c.out < (1 - fade)) continue;
-        let v = data ? data[i * 4] / 255 : 0;
-        v = Math.pow(clamp((v - 0.16) / 0.62), 1.35);      // keep only real highlights; the rest goes to night
-        c.b += (v - c.b) * 0.35;                           // ease between frames so motion stays smooth
-        let a, g;
-        if (c.b < 0.1) {
-          if (c.star) {                                    // a few slow-twinkling stars in the dark
-            a = 0.2 + 0.45 * (0.5 + 0.5 * Math.sin(now / 900 + c.star * 40)); g = c.star > 0.5 ? '+' : '.';
-          } else { a = 0.075; if (Math.random() < 0.004) c.ch = rnd(FAINT + ALNUM); g = c.ch; }
-        }
-        else if (c.b > 0.86) { a = 1; g = rnd(DENSE); }
-        else { a = 0.14 + c.b * 1.0; if (Math.random() < 0.06) c.ch = rnd(ALNUM); g = c.ch; }
+        let v = data ? clamp((data[i * 4] / 255 - lo) / (hi - lo)) : 0;
+        v = Math.pow(v, 1.25);
+        c.b += (v - c.b) * 0.4;                            // ease between frames so motion stays smooth
+        let a, g, b = c.b;
+        if (b < 0.07) {
+          if (c.star) { a = 0.18 + 0.4 * (0.5 + 0.5 * Math.sin(now / 900 + c.star * 40)); g = c.star > 0.5 ? '+' : '.'; }
+          else { a = 0.06; if (Math.random() < 0.004) c.ch = rnd(FAINT + ALNUM); g = c.ch; }
+        } else if (b < 0.34) {
+          a = 0.22 + b * 1.1; g = RAMP[1 + Math.min(RAMP.length - 2, ((b - 0.07) / 0.27 * (RAMP.length - 1)) | 0)];
+        } else if (b < 0.8) {
+          a = 0.35 + b * 0.7; if (Math.random() < 0.05) c.ch = rnd(ALNUM); g = c.ch;
+        } else { a = 1; g = rnd(DENSE); }
+        if (boost) { a = Math.min(1, a + boost); if (b > 0.07 && Math.random() < boost) g = rnd(DENSE); }
+        if (glitch && Math.random() < 0.5) { g = rnd(SCRAMBLE); a = Math.min(1, a + Math.random() * 0.5); }
         for (const k of keepOut) if (x > k.x0 && x < k.x1 && y > k.y0 && y < k.y1) { a *= k.f; break; }
         const lvl = Math.max(1, Math.min(LEVELS - 1, (a * LEVELS) | 0));
-        if (lvl > 0) buckets[lvl].push(x, y, g);
+        buckets[lvl].push(x, y, g);
       }
     }
     fctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    fctx.fillStyle = INK; fctx.fillRect(0, 0, W, H);
+    fctx.clearRect(0, 0, W, H);
     fctx.font = `400 ${fs}px "Geist Mono", ui-monospace, Menlo, monospace`;
     fctx.textBaseline = 'top';
     for (let l = 1; l < LEVELS; l++) {
-      const b = buckets[l]; if (!b.length) continue;
+      const bk = buckets[l]; if (!bk.length) continue;
       fctx.fillStyle = `rgba(242,242,238,${(l / (LEVELS - 1)).toFixed(3)})`;
-      for (let k = 0; k < b.length; k += 3) fctx.fillText(b[k + 2], b[k] * cw, b[k + 1] * chH);
+      for (let k = 0; k < bk.length; k += 3) fctx.fillText(bk[k + 2], bk[k] * cw, bk[k + 1] * chH);
     }
-    if (video.duration) frameEl.textContent = 'Frame ' + String(Math.floor(video.currentTime * 24)).padStart(4, '0');
+    video.style.opacity = '';                              // the footage fades with the characters
+    if (video.classList.contains('on')) video.style.opacity = (0.34 * fade).toFixed(3);
+
+    if (video.duration) {
+      const t = video.currentTime;
+      let sc = 0; for (let k = 0; k < SCENES.length; k++) if (t >= SCENES[k][0]) sc = k;
+      if (sc !== scene) { scene = sc; glitchUntil = now + 320; sceneEl.textContent = `Scene ${String(sc + 1).padStart(2, '0')} / 04 · ${SCENES[sc][1]}`; }
+      const mm = Math.floor(t / 60), ss = t % 60;
+      frameEl.textContent = `${String(mm).padStart(2, '0')}:${ss.toFixed(2).padStart(5, '0')}`;
+    }
   }
 
   // ---------- pixel wipe: night to day ----------
@@ -249,7 +287,7 @@ footer a:hover{text-decoration:underline;text-underline-offset:4px}
       blocks.push({ x, y, r: Math.random() * 0.62 + (1 - y / brows) * 0.38, g: rnd(SCRAMBLE) });
   }
   function drawWipe(p) {
-    const w = clamp((p - 0.42) / 0.5);
+    const w = clamp((p - 0.26) / 0.5);
     wctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     wctx.clearRect(0, 0, W, H);
     if (w <= 0) return;
@@ -276,13 +314,13 @@ footer a:hover{text-decoration:underline;text-underline-offset:4px}
     const word = ln.textContent; ln.textContent = '';
     [...word].forEach(L => { const s = document.createElement('span'); s.className = 'ch'; s.textContent = L; s.dataset.c = L; s.setAttribute('aria-hidden', 'true'); ln.appendChild(s); chars.push(s); });
   });
-  chars.forEach((s, i) => { s.dataset.inAt = (i / chars.length) * 0.55 + Math.random() * 0.12; s.dataset.outAt = 0.02 + (i / chars.length) * 0.22 + Math.random() * 0.06; });
+  chars.forEach((s, i) => { s.dataset.inAt = (i / chars.length) * 0.55 + Math.random() * 0.12; s.dataset.outAt = 0.01 + (i / chars.length) * 0.13 + Math.random() * 0.04; });
   function lockTitle() { chars.forEach(s => { s.style.width = ''; }); chars.forEach(s => { s.style.width = s.getBoundingClientRect().width + 'px'; }); }
   function drawTitle(now, p) {
     const intro = reduce ? 1 : clamp((now - start - 250) / 1300);
     for (const s of chars) {
       const tin = (intro - s.dataset.inAt) / 0.3;
-      const tout = (p - s.dataset.outAt) / 0.14;
+      const tout = (p - s.dataset.outAt) / 0.08;
       let txt = s.dataset.c, op = 1;
       if (tin < 1) { op = tin <= 0 ? 0 : 1; if (tin > 0) txt = Math.random() < tin ? s.dataset.c : rnd(SCRAMBLE); }
       if (tout > 0) { op = Math.max(0, 1 - tout); txt = tout < 1 && Math.random() > 0.15 ? rnd(SCRAMBLE) : txt; }
@@ -290,8 +328,8 @@ footer a:hover{text-decoration:underline;text-underline-offset:4px}
       const o = op.toFixed(2); if (s.style.opacity !== o) s.style.opacity = o;
     }
     const rest = hero.querySelectorAll('.sub,.readout,.bar');
-    const o = (1 - clamp((p - 0.04) / 0.2)) * clamp((now - start - 900) / 600);
-    rest.forEach(e => e.style.opacity = (reduce ? 1 - clamp((p - 0.04) / 0.2) : o).toFixed(3));
+    const o = (1 - clamp((p - 0.02) / 0.12)) * clamp((now - start - 900) / 600);
+    rest.forEach(e => e.style.opacity = (reduce ? 1 - clamp((p - 0.02) / 0.12) : o).toFixed(3));
   }
 
   // ---------- studio lede: words decode in when they come into view ----------
@@ -330,6 +368,8 @@ footer a:hover{text-decoration:underline;text-underline-offset:4px}
   const go = () => {
     layout();
     if (reduce) { video.pause(); video.currentTime = 8; }
+    video.addEventListener('playing', () => video.classList.add('on'), { once: true });
+    if (reduce) video.addEventListener('seeked', () => video.classList.add('on'), { once: true });
     video.play && video.play().catch(() => {});
     requestAnimationFrame(tick);
   };
