@@ -4,132 +4,141 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Far Shore Works</title>
-<meta name="description" content="Far Shore Works is an independent studio making games and apps, based in Louisiana.">
+<meta name="description" content="Far Shore Works is an independent studio making games and apps.">
 <meta property="og:title" content="Far Shore Works">
 <meta property="og:description" content="An independent studio making games and apps.">
-<meta name="theme-color" content="#000000">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23000'/%3E%3Cpath d='M6 20h20' stroke='%23fff' stroke-width='2.4' stroke-linecap='round'/%3E%3Cpath d='M10 25h12' stroke='%23fff' stroke-opacity='.5' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E">
-<link rel="preload" href="assets/fonts/sora-latin-800-normal.woff2" as="font" type="font/woff2" crossorigin>
+<meta name="theme-color" content="#0a0a0a">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%230a0a0a'/%3E%3Ctext x='16' y='21' font-family='monospace' font-size='13' fill='%23f2f2ee' text-anchor='middle'%3E[F]%3C/text%3E%3C/svg%3E">
+<link rel="preload" href="assets/fonts/instrument-sans-latin-var.woff2" as="font" type="font/woff2" crossorigin>
 <style>
-@font-face{font-family:"Sora";src:url(assets/fonts/sora-latin-400-normal.woff2) format("woff2");font-weight:400;font-display:swap}
-@font-face{font-family:"Sora";src:url(assets/fonts/sora-latin-800-normal.woff2) format("woff2");font-weight:800;font-display:block}
+@font-face{font-family:"Instrument Sans";src:url(assets/fonts/instrument-sans-latin-var.woff2) format("woff2");font-weight:400 700;font-stretch:75% 100%;font-display:block}
+@font-face{font-family:"Geist Mono";src:url(assets/fonts/geist-mono-latin-400-normal.woff2) format("woff2");font-weight:400;font-display:swap}
 @font-face{font-family:"Geist Mono";src:url(assets/fonts/geist-mono-latin-500-normal.woff2) format("woff2");font-weight:500;font-display:swap}
+
+/* Layout: one pinned night-side hero (ASCII feed) that dissolves into a white field by pixel wipe, then a quiet white studio section. */
 :root{
-  --black:#000; --white:#F4F4F2; --muted:rgba(244,244,242,.56); --line:rgba(244,244,242,.14);
-  --glass:rgba(4,4,6,.74);           /* tint of the frosted glass */
-  --blur:20px;                       /* frost amount */
-  --display:"Sora","Avenir Next",system-ui,sans-serif;
+  --ink:#0a0a0a;          /* night */
+  --ink-2:#141414;        /* panels on night */
+  --paper:#f2f2ee;        /* day */
+  --paper-2:#e4e4df;      /* rules on day */
+  --dim:rgba(242,242,238,.5);
+  --dim-ink:rgba(10,10,10,.55);
+  --display:"Instrument Sans","Helvetica Neue",Arial,sans-serif;
   --mono:"Geist Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
-  --body:"Sora","Helvetica Neue",system-ui,sans-serif;
-  --pad:clamp(20px,3.2vw,48px);
+  --pad:clamp(16px,3vw,40px);
   color-scheme:dark;
 }
 *{box-sizing:border-box}
 html,body{margin:0}
-body{background:var(--black);color:var(--white);font:400 16px/1.6 var(--body);-webkit-font-smoothing:antialiased}
+body{background:var(--ink);color:var(--paper);font:400 16px/1.55 var(--display);-webkit-font-smoothing:antialiased}
 a{color:inherit}
-a:focus-visible{outline:2px solid var(--white);outline-offset:3px;border-radius:2px}
-
-/* Smooth scrolling (Lenis) */
+a:focus-visible{outline:1px solid currentColor;outline-offset:4px}
 html.lenis,html.lenis body{height:auto}
 .lenis.lenis-smooth{scroll-behavior:auto!important}
-.lenis.lenis-stopped{overflow:hidden}
 
-/* ---------- HERO ---------- */
-.hero{position:relative;height:100vh;height:100svh;min-height:520px;overflow:hidden;isolation:isolate;background:#050507}
+.mono{font:500 11px/1.4 var(--mono);letter-spacing:.14em;text-transform:uppercase}
 
-/* Layer 1: what shows through. The video, with an animated stand-in until a video is added. */
-.stage{position:absolute;inset:0;z-index:0;background:#2a2b2c url(assets/hero-poster.jpg) center/cover no-repeat}
-.stage video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity .8s ease}
-.stage video.ready{opacity:1}
+/* ---------- HERO (pinned while it dissolves) ---------- */
+.track{position:relative;height:260vh;height:260svh}
+.hero{position:sticky;top:0;height:100vh;height:100svh;min-height:520px;overflow:hidden;background:var(--ink)}
+.feed{position:absolute;inset:0;width:100%;height:100%;display:block}
+.wipe{position:absolute;inset:0;width:100%;height:100%;display:block;z-index:4;pointer-events:none}
+#src{position:absolute;width:2px;height:2px;opacity:0;pointer-events:none}
 
-/* Layer 2: black frosted glass with the words cut out of it (mask is drawn by the script). */
-.glass{position:absolute;inset:0;z-index:1;background:var(--glass);
-  -webkit-backdrop-filter:blur(var(--blur)) saturate(140%);backdrop-filter:blur(var(--blur)) saturate(140%);
-  -webkit-mask-size:100% 100%;mask-size:100% 100%;-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat}
-/* very faint blue/white light drifting inside the glass */
-.glass::before{content:"";position:absolute;inset:-35%;pointer-events:none;opacity:.12;mix-blend-mode:screen;
-  background:
-    radial-gradient(38% 32% at 30% 38%,rgba(96,150,255,.9),transparent 70%),
-    radial-gradient(32% 28% at 70% 62%,rgba(255,255,255,.75),transparent 70%),
-    radial-gradient(44% 36% at 58% 24%,rgba(64,112,230,.7),transparent 70%)}
-@media (prefers-reduced-motion:no-preference){
-  .glass::before{animation:sheen 32s ease-in-out infinite alternate}
-  @keyframes sheen{from{transform:translate(-7%,5%) rotate(0deg)}to{transform:translate(7%,-5%) rotate(14deg)}}
-}
-/* fine grain so it reads as frosted, not just dark */
-.glass::after{content:"";position:absolute;inset:0;opacity:.09;mix-blend-mode:overlay;pointer-events:none;
-  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
+.bar{position:absolute;z-index:3;left:0;right:0;top:0;display:flex;justify-content:space-between;align-items:center;
+  padding:max(var(--pad),env(safe-area-inset-top)) max(var(--pad),env(safe-area-inset-right)) 0 max(var(--pad),env(safe-area-inset-left))}
+.mark{letter-spacing:.32em}
+.mark b{font-weight:500;color:var(--dim)}
+.bar a{text-decoration:none;display:inline-flex;gap:.6em;align-items:center}
+.bar a:hover span{text-decoration:underline;text-underline-offset:4px}
 
+.copy{position:absolute;z-index:3;left:max(var(--pad),env(safe-area-inset-left));right:max(var(--pad),env(safe-area-inset-right));
+  bottom:max(var(--pad),env(safe-area-inset-bottom));display:grid;grid-template-columns:1fr auto;align-items:end;gap:24px}
+.title{margin:0;font-family:var(--display);font-weight:500;font-stretch:75%;text-transform:uppercase;
+  font-size:min(27vw,24svh);line-height:.84;letter-spacing:-.01em}
+.title .ln{display:block;white-space:nowrap}
+.title .ch{display:inline-block;text-align:center}
+.sub{margin:18px 0 0;color:var(--dim)}
+.readout{display:grid;gap:6px;justify-items:end;text-align:right;color:var(--dim)}
+.readout .on{color:var(--paper)}
+.tick{display:inline-block;width:.6em;height:.6em;background:var(--paper);margin-right:.5em;vertical-align:.05em}
+@media (prefers-reduced-motion:no-preference){.tick{animation:blink 1.6s steps(2,start) infinite}@keyframes blink{to{opacity:.15}}}
+@media (max-width:640px){.copy{grid-template-columns:1fr}.readout{justify-items:start;text-align:left}}
 
-/* The real heading. Visible until the cutout is drawn, then kept for screen readers and search. */
-.title{position:absolute;inset:0;z-index:2;margin:0;display:grid;place-items:center start;text-align:left;
-  font:800 clamp(64px,22vw,320px)/.9 var(--display);letter-spacing:-.02em;text-transform:uppercase;padding:var(--pad)}
-.hero.cut .title{clip:rect(0 0 0 0);clip-path:inset(50%);width:1px;height:1px;overflow:hidden;white-space:nowrap;padding:0}
-
-/* Corner labels */
-.corner{position:absolute;z-index:3;font:500 12px/1.3 var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--white)}
-.corner.tl{top:max(var(--pad),env(safe-area-inset-top));left:max(var(--pad),env(safe-area-inset-left))}
-.corner.tr{top:max(var(--pad),env(safe-area-inset-top));right:max(var(--pad),env(safe-area-inset-right))}
-.corner.bl{bottom:max(var(--pad),env(safe-area-inset-bottom));left:max(var(--pad),env(safe-area-inset-left));color:var(--muted)}
-.corner.br{bottom:max(var(--pad),env(safe-area-inset-bottom));right:max(var(--pad),env(safe-area-inset-right));color:var(--muted)}
-.m-only{display:none}
-@media (max-width:560px){.corner.br{display:none}.m-only{display:inline}}
-.corner a{text-decoration:none;border-bottom:1px solid transparent}
-.corner a:hover{border-color:currentColor}
-
-
-/* ---------- ABOUT (existing copy, restyled to match) ---------- */
-.about{padding:clamp(72px,10vw,140px) var(--pad) max(40px,env(safe-area-inset-bottom))}
-.wrap{max-width:1160px;margin:0 auto}
-.lede{max-width:28ch;margin:0;font:500 clamp(24px,3.4vw,44px)/1.2 var(--display);letter-spacing:-.02em}
-.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:28px 40px;margin:clamp(56px,8vw,96px) 0 0;padding:28px 0 0;border-top:1px solid var(--line)}
-.grid h2{font:500 12px/1 var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin:0 0 12px}
-.grid p{margin:0;max-width:36ch}
-footer{margin-top:clamp(64px,9vw,120px);display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px 24px;font:400 12px/1.4 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+/* ---------- STUDIO (day side) ---------- */
+.day{position:relative;z-index:1;background:var(--paper);color:var(--ink);margin-top:-1px;
+  padding:clamp(72px,12vw,160px) max(var(--pad),env(safe-area-inset-right)) max(40px,env(safe-area-inset-bottom)) max(var(--pad),env(safe-area-inset-left))}
+.day ::selection{background:var(--ink);color:var(--paper)}
+.wrap{max-width:1240px;margin:0 auto}
+.kicker{color:var(--dim-ink);margin:0 0 28px}
+.lede{margin:0;max-width:17ch;font:500 clamp(36px,6.2vw,92px)/.95 var(--display);font-stretch:75%;text-transform:uppercase;letter-spacing:-.005em;text-wrap:balance}
+.lede .w{display:inline-block}
+.cols{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));margin-top:clamp(64px,9vw,120px);border-top:1px solid var(--ink)}
+.cols > div{padding:18px 24px 0 0;min-width:0}
+.cols > div + div{padding-left:24px;border-left:1px solid var(--paper-2)}
+.cols h2{margin:0 0 14px;color:var(--dim-ink)}
+.cols p{margin:0;max-width:34ch}
+@media (max-width:760px){.cols{grid-template-columns:1fr}.cols > div,.cols > div + div{padding:18px 0 22px;border-left:0;border-bottom:1px solid var(--paper-2)}}
+footer{margin-top:clamp(80px,10vw,140px);display:flex;flex-wrap:wrap;justify-content:space-between;gap:10px 24px;color:var(--dim-ink)}
+footer a{text-decoration:none}
+footer a:hover{text-decoration:underline;text-underline-offset:4px}
 </style>
 </head>
 <body>
 
-<header class="hero" id="hero">
-  <div class="stage" aria-hidden="true">
-    <video id="heroVideo" autoplay muted loop playsinline preload="auto" poster="assets/hero-poster.jpg">
-      <source src="assets/hero.mp4" type="video/mp4">
+<div class="track" id="track">
+  <header class="hero" id="hero">
+    <canvas class="feed" id="feed" aria-hidden="true"></canvas>
+    <video id="src" muted loop playsinline autoplay preload="auto" aria-hidden="true">
+      <source src="assets/hero-ascii.mp4" type="video/mp4">
     </video>
-  </div>
 
-  <div class="glass" id="glass"></div>
+    <div class="bar">
+      <span class="mono mark">[<b>F</b>S<b>W</b>]</span>
+      <a class="mono" href="https://github.com/Far-Shore-Works"><span>GitHub</span> ↗</a>
+    </div>
 
-  <h1 class="title">Far Shore Works</h1>
-
-  <span class="corner tl">©2026</span>
-  <a class="corner tr" href="https://github.com/Far-Shore-Works">GitHub</a>
-  <span class="corner bl">Independent studio — games &amp; apps<span class="m-only"> · Louisiana</span></span>
-  <span class="corner br">Louisiana</span>
-</header>
-
-<main class="about">
-  <div class="wrap">
-    <p class="lede">An independent studio making games and apps, built carefully and played a lot before they ship.</p>
-
-    <section class="grid" aria-label="About the studio">
+    <div class="copy">
       <div>
-        <h2>What we make</h2>
+        <h1 class="title" id="title" aria-label="Far Shore Works">
+          <span class="ln">Far</span><span class="ln">Shore</span><span class="ln">Works</span>
+        </h1>
+        <p class="mono sub">Independent studio — games &amp; apps</p>
+      </div>
+      <div class="mono readout" aria-hidden="true">
+        <span class="on"><i class="tick"></i>Night side · feed 01</span>
+        <span id="frame">Frame 0000</span>
+        <span>Scroll ↓</span>
+      </div>
+    </div>
+
+    <canvas class="wipe" id="wipe" aria-hidden="true"></canvas>
+  </header>
+</div>
+
+<main class="day" id="day">
+  <div class="wrap">
+    <p class="mono kicker">[ 01 ] The studio</p>
+    <p class="lede" id="lede">An independent studio making games and apps, built carefully and played a lot before they ship.</p>
+
+    <section class="cols" aria-label="About the studio">
+      <div>
+        <h2 class="mono">What we make</h2>
         <p>Games for PC first, then apps and smaller experiments for phones and Roblox when an idea fits.</p>
       </div>
       <div>
-        <h2>Right now</h2>
+        <h2 class="mono">Right now</h2>
         <p>Our first game is in development. We'll share it here when it's ready to show.</p>
       </div>
       <div>
-        <h2>Where</h2>
+        <h2 class="mono">Where</h2>
         <p>A two-person studio with roots in Louisiana.</p>
       </div>
     </section>
 
-    <footer>
+    <footer class="mono">
       <span>© 2026 Far Shore Works</span>
-      <a href="https://github.com/Far-Shore-Works">github.com/Far-Shore-Works</a>
+      <a href="https://github.com/Far-Shore-Works">github.com/Far-Shore-Works ↗</a>
     </footer>
   </div>
 </main>
@@ -137,79 +146,201 @@ footer{margin-top:clamp(64px,9vw,120px);display:flex;flex-wrap:wrap;justify-cont
 <script src="assets/js/lenis.min.js"></script>
 <script>
 (() => {
-  const hero  = document.getElementById('hero');
-  const glass = document.getElementById('glass');
-  const video = document.getElementById('heroVideo');
-  const FONT_WEIGHT = 800, FONT = 'Sora';
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const $ = id => document.getElementById(id);
+  const track = $('track'), hero = $('hero'), feed = $('feed'), wipe = $('wipe'), video = $('src'), title = $('title'), frameEl = $('frame');
+  const fctx = feed.getContext('2d'), wctx = wipe.getContext('2d');
+  const sample = document.createElement('canvas');
+  const sctx = sample.getContext('2d', { willReadFrequently: true });
 
-  // Video: show it once it can play; respect reduced motion.
-  const reduce = matchMedia('(prefers-reduced-motion: reduce)');
-  video.addEventListener('canplay', () => { video.classList.add('ready'); if (reduce.matches) video.pause(); });
+  const INK = '#0a0a0a', PAPER = '#f2f2ee';
+  const ALNUM = 'ABCDEFGHJKLMNPQRSTUVWXYZ0123456789';
+  const DENSE = '#%@$&8B';
+  const FAINT = '.:·';
+  const SCRAMBLE = '#%&*+=/<>[]01XZ';
+  const rnd = s => s[(Math.random() * s.length) | 0];
+  const clamp = (v, a = 0, b = 1) => Math.min(b, Math.max(a, v));
+  const ease = t => t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
 
-  const LINES = ['FAR', 'SHORE', 'WORKS'];
-  const tl = hero.querySelector('.corner.tl'), tr = hero.querySelector('.corner.tr'), bl = hero.querySelector('.corner.bl');
-
-  function draw() {
-    const w = hero.clientWidth, h = hero.clientHeight;
-    const dpr = Math.min(window.devicePixelRatio || 1, 3);
-    const W = Math.round(w * dpr), H = Math.round(h * dpr);
-
-    // The type lives in the box between the corner labels, flush with their left edge.
-    const gapY = Math.max(16, tl.offsetLeft * 0.6);
-    const boxL = tl.offsetLeft * dpr;
-    const boxR = (tr.offsetLeft + tr.offsetWidth) * dpr;
-    const boxT = (tl.offsetTop + tl.offsetHeight + gapY) * dpr;
-    const boxB = (bl.offsetTop - gapY) * dpr;
-
-    const c = document.createElement('canvas');
-    c.width = W; c.height = H;
-    const ctx = c.getContext('2d');
-    ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
-
-    const setFont = s => {
-      ctx.font = `${FONT_WEIGHT} ${s}px ${FONT}, "Avenir Next", "Helvetica Neue", Arial, sans-serif`;
-      if ('letterSpacing' in ctx) ctx.letterSpacing = `${-0.03 * s}px`;
-    };
-    const ink = l => { const m = ctx.measureText(l); return { left: m.actualBoundingBoxLeft, width: m.actualBoundingBoxLeft + m.actualBoundingBoxRight }; };
-
-    // As big as the box allows: the widest line fills the width, or the stack fills the height.
-    setFont(100);
-    const widest = Math.max(...LINES.map(l => ink(l).width));
-    const cap100 = ctx.measureText('H').actualBoundingBoxAscent;
-    const gapK = 0.16; // gap between lines as a share of cap height
-    const block100 = (LINES.length + gapK * (LINES.length - 1)) * cap100;
-    const size = Math.min((boxR - boxL) / widest * 100, (boxB - boxT) / block100 * 100);
-    setFont(size);
-
-    const cap = ctx.measureText('H').actualBoundingBoxAscent;
-    const gap = cap * gapK;
-    const total = LINES.length * cap + (LINES.length - 1) * gap;
-    let y = boxT + (boxB - boxT - total) / 2 + cap;
-
-    // Mask: opaque everywhere, transparent where the letters are.
-    ctx.fillStyle = '#000'; ctx.fillRect(0, 0, W, H);
-    ctx.globalCompositeOperation = 'destination-out';
-    LINES.forEach(l => { ctx.fillText(l, boxL + ink(l).left, y); y += cap + gap; });
-    const url = `url(${c.toDataURL('image/png')})`;
-    glass.style.webkitMaskImage = url;
-    glass.style.maskImage = url;
-
-    hero.classList.add('cut');
+  // ---------- grid ----------
+  let W, H, dpr, fs, cw, chH, cols, rows, cells, keepOut, start = performance.now();
+  function layout() {
+    dpr = Math.min(devicePixelRatio || 1, 2);
+    W = hero.clientWidth; H = hero.clientHeight;
+    for (const c of [feed, wipe]) { c.width = Math.round(W * dpr); c.height = Math.round(H * dpr); }
+    fs = W < 640 ? 9 : W < 1100 ? 10.5 : 12;
+    cw = fs * 0.62; chH = fs * 1.25;
+    cols = Math.ceil(W / cw); rows = Math.ceil(H / chH);
+    sample.width = cols; sample.height = rows;
+    cells = new Array(cols * rows);
+    for (let i = 0; i < cells.length; i++) {
+      const y = (i / cols) | 0;
+      cells[i] = { b: 0, ch: rnd(ALNUM), born: Math.random() * 0.9 + (y / rows) * 0.25, out: Math.random(), star: Math.random() < 0.012 ? Math.random() : 0 };
+    }
+    // Characters thin out around the text so it always reads.
+    const h = hero.getBoundingClientRect();
+    keepOut = [[title, 20, 0.25], ...[...hero.querySelectorAll('.sub,.readout,.bar > *')].map(e => [e, 14, 0.05])].map(([e, m, f]) => {
+      const r = e.getBoundingClientRect();
+      return { x0: (r.left - h.left - m) / cw, x1: (r.right - h.left + m) / cw, y0: (r.top - h.top - m) / chH, y1: (r.bottom - h.top + m) / chH, f };
+    });
+    buildWipe();
+    lockTitle();
   }
 
-  let raf;
-  const schedule = () => { cancelAnimationFrame(raf); raf = requestAnimationFrame(draw); };
+  // Cover-fit the video into the grid's aspect.
+  function sampleFrame() {
+    const vw = video.videoWidth, vh = video.videoHeight;
+    if (!vw) return null;
+    const target = (cols * cw) / (rows * chH), src = vw / vh;
+    let sx = 0, sy = 0, sw = vw, sh = vh;
+    if (src > target) { sw = vh * target; sx = (vw - sw) / 2; } else { sh = vw / target; sy = (vh - sh) / 2; }
+    sctx.drawImage(video, sx, sy, sw, sh, 0, 0, cols, rows);
+    return sctx.getImageData(0, 0, cols, rows).data;
+  }
 
-  // Wait for the font so the cutout uses Sora, not a fallback.
-  const ready = document.fonts ? document.fonts.load(`${FONT_WEIGHT} 100px ${FONT}`) : Promise.resolve();
-  ready.then(draw, draw);
-  new ResizeObserver(schedule).observe(hero);
+  // ---------- ASCII feed ----------
+  const LEVELS = 14;
+  const buckets = Array.from({ length: LEVELS }, () => []);
+  function drawFeed(now, p) {
+    const data = sampleFrame();
+    const intro = reduce ? 1 : clamp((now - start) / 1600);
+    const fade = 1 - clamp((p - 0.05) / 0.6);              // the feed thins out as you scroll
+    for (const b of buckets) b.length = 0;
+    for (let y = 0, i = 0; y < rows; y++) {
+      for (let x = 0; x < cols; x++, i++) {
+        const c = cells[i];
+        if (c.born > intro * 1.15) continue;
+        if (c.out < (1 - fade)) continue;
+        let v = data ? data[i * 4] / 255 : 0;
+        v = Math.pow(clamp((v - 0.16) / 0.62), 1.35);      // keep only real highlights; the rest goes to night
+        c.b += (v - c.b) * 0.35;                           // ease between frames so motion stays smooth
+        let a, g;
+        if (c.b < 0.1) {
+          if (c.star) {                                    // a few slow-twinkling stars in the dark
+            a = 0.2 + 0.45 * (0.5 + 0.5 * Math.sin(now / 900 + c.star * 40)); g = c.star > 0.5 ? '+' : '.';
+          } else { a = 0.075; if (Math.random() < 0.004) c.ch = rnd(FAINT + ALNUM); g = c.ch; }
+        }
+        else if (c.b > 0.86) { a = 1; g = rnd(DENSE); }
+        else { a = 0.14 + c.b * 1.0; if (Math.random() < 0.06) c.ch = rnd(ALNUM); g = c.ch; }
+        for (const k of keepOut) if (x > k.x0 && x < k.x1 && y > k.y0 && y < k.y1) { a *= k.f; break; }
+        const lvl = Math.max(1, Math.min(LEVELS - 1, (a * LEVELS) | 0));
+        if (lvl > 0) buckets[lvl].push(x, y, g);
+      }
+    }
+    fctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    fctx.fillStyle = INK; fctx.fillRect(0, 0, W, H);
+    fctx.font = `400 ${fs}px "Geist Mono", ui-monospace, Menlo, monospace`;
+    fctx.textBaseline = 'top';
+    for (let l = 1; l < LEVELS; l++) {
+      const b = buckets[l]; if (!b.length) continue;
+      fctx.fillStyle = `rgba(242,242,238,${(l / (LEVELS - 1)).toFixed(3)})`;
+      for (let k = 0; k < b.length; k += 3) fctx.fillText(b[k + 2], b[k] * cw, b[k + 1] * chH);
+    }
+    if (video.duration) frameEl.textContent = 'Frame ' + String(Math.floor(video.currentTime * 24)).padStart(4, '0');
+  }
 
-  // Smooth, eased scrolling. Skipped for people who ask for reduced motion.
-  if (window.Lenis && !reduce.matches) {
-    const lenis = new Lenis({ lerp: 0.085, wheelMultiplier: 1, smoothWheel: true });
-    const raf2 = t => { lenis.raf(t); requestAnimationFrame(raf2); };
-    requestAnimationFrame(raf2);
+  // ---------- pixel wipe: night to day ----------
+  let blocks, bsz, bcols, brows;
+  function buildWipe() {
+    bsz = W < 640 ? 22 : 30;
+    bcols = Math.ceil(W / bsz); brows = Math.ceil(H / bsz);
+    blocks = [];
+    for (let y = 0; y < brows; y++) for (let x = 0; x < bcols; x++)
+      blocks.push({ x, y, r: Math.random() * 0.62 + (1 - y / brows) * 0.38, g: rnd(SCRAMBLE) });
+  }
+  function drawWipe(p) {
+    const w = clamp((p - 0.42) / 0.5);
+    wctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    wctx.clearRect(0, 0, W, H);
+    if (w <= 0) return;
+    wctx.font = `500 ${bsz * 0.55}px "Geist Mono", ui-monospace, monospace`;
+    wctx.textAlign = 'center'; wctx.textBaseline = 'middle';
+    for (const b of blocks) {
+      const s = (w * 1.25 - b.r) / 0.22;
+      if (s <= 0) continue;
+      const px = b.x * bsz, py = b.y * bsz;
+      if (s < 0.45) {                                      // a glyph flickers on first
+        wctx.fillStyle = `rgba(242,242,238,${(s / 0.45).toFixed(3)})`;
+        wctx.fillText(b.g, px + bsz / 2, py + bsz / 2);
+      } else {                                             // then the block fills to day
+        const k = ease(clamp((s - 0.45) / 0.55)), inset = (1 - k) * bsz * 0.28;
+        wctx.fillStyle = PAPER;
+        wctx.fillRect(px + inset, py + inset, bsz - inset * 2 + 0.5, bsz - inset * 2 + 0.5);
+      }
+    }
+  }
+
+  // ---------- title: decodes in, breaks apart on the way out ----------
+  const chars = [];
+  title.querySelectorAll('.ln').forEach(ln => {
+    const word = ln.textContent; ln.textContent = '';
+    [...word].forEach(L => { const s = document.createElement('span'); s.className = 'ch'; s.textContent = L; s.dataset.c = L; s.setAttribute('aria-hidden', 'true'); ln.appendChild(s); chars.push(s); });
+  });
+  chars.forEach((s, i) => { s.dataset.inAt = (i / chars.length) * 0.55 + Math.random() * 0.12; s.dataset.outAt = 0.02 + (i / chars.length) * 0.22 + Math.random() * 0.06; });
+  function lockTitle() { chars.forEach(s => { s.style.width = ''; }); chars.forEach(s => { s.style.width = s.getBoundingClientRect().width + 'px'; }); }
+  function drawTitle(now, p) {
+    const intro = reduce ? 1 : clamp((now - start - 250) / 1300);
+    for (const s of chars) {
+      const tin = (intro - s.dataset.inAt) / 0.3;
+      const tout = (p - s.dataset.outAt) / 0.14;
+      let txt = s.dataset.c, op = 1;
+      if (tin < 1) { op = tin <= 0 ? 0 : 1; if (tin > 0) txt = Math.random() < tin ? s.dataset.c : rnd(SCRAMBLE); }
+      if (tout > 0) { op = Math.max(0, 1 - tout); txt = tout < 1 && Math.random() > 0.15 ? rnd(SCRAMBLE) : txt; }
+      if (s.textContent !== txt) s.textContent = txt;
+      const o = op.toFixed(2); if (s.style.opacity !== o) s.style.opacity = o;
+    }
+    const rest = hero.querySelectorAll('.sub,.readout,.bar');
+    const o = (1 - clamp((p - 0.04) / 0.2)) * clamp((now - start - 900) / 600);
+    rest.forEach(e => e.style.opacity = (reduce ? 1 - clamp((p - 0.04) / 0.2) : o).toFixed(3));
+  }
+
+  // ---------- studio lede: words decode in when they come into view ----------
+  const lede = $('lede'), words = [];
+  lede.innerHTML = lede.textContent.split(' ').map(w => `<span class="w">${w}</span>`).join(' ');
+  lede.querySelectorAll('.w').forEach(w => { w.dataset.c = w.textContent; words.push(w); });
+  let ledeStart = null;
+  new IntersectionObserver(([e], o) => { if (e.isIntersecting) { ledeStart = performance.now(); o.disconnect(); } }, { threshold: 0.35 }).observe(lede);
+  function drawLede(now) {
+    if (ledeStart === null || reduce) return;
+    const t = (now - ledeStart) / 900;
+    if (t > 2) return;
+    words.forEach((w, i) => {
+      const k = (t - i * 0.05) / 0.5;
+      const c = w.dataset.c;
+      const txt = k >= 1 ? c : k <= 0 ? c.replace(/./g, ' ') : [...c].map((ch, j) => (j / c.length) < k ? ch : rnd(SCRAMBLE)).join('');
+      if (w.textContent !== txt) w.textContent = txt;
+    });
+  }
+  if (!reduce) words.forEach(w => { w.style.minWidth = w.getBoundingClientRect().width + 'px'; w.textContent = w.dataset.c.replace(/./g, ' '); });
+
+  // ---------- loop ----------
+  const progress = () => { const r = track.getBoundingClientRect(); return clamp(-r.top / (r.height - innerHeight)); };
+  let last = 0, visible = true;
+  new IntersectionObserver(([e]) => { visible = e.isIntersecting; }).observe(track);
+  function tick(now) {
+    requestAnimationFrame(tick);
+    drawLede(now);
+    if (!visible || document.hidden) return;
+    if (now - last < 1000 / 30) return;                   // 30fps is plenty for the feed
+    last = now;
+    const p = progress();
+    drawFeed(now, p); drawTitle(now, p); drawWipe(p);
+  }
+
+  const go = () => {
+    layout();
+    if (reduce) { video.pause(); video.currentTime = 8; }
+    video.play && video.play().catch(() => {});
+    requestAnimationFrame(tick);
+  };
+  (document.fonts ? Promise.all([document.fonts.load('500 100px "Instrument Sans"'), document.fonts.load('400 12px "Geist Mono"')]) : Promise.resolve()).then(go, go);
+  let rz; addEventListener('resize', () => { clearTimeout(rz); rz = setTimeout(layout, 120); });
+  addEventListener('touchstart', () => video.paused && video.play().catch(() => {}), { once: true, passive: true });
+
+  if (window.Lenis && !reduce) {
+    const lenis = new Lenis({ lerp: 0.085, smoothWheel: true });
+    const loop = t => { lenis.raf(t); requestAnimationFrame(loop); };
+    requestAnimationFrame(loop);
   }
 })();
 </script>
