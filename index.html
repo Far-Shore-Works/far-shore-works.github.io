@@ -297,19 +297,27 @@ footer a:hover{text-decoration:underline;text-underline-offset:4px}
   }
 
   // ---------- pixel wipe: night to day ----------
-  let blocks, bsz, bcols, brows, dayStars = [];
+  let blocks, bsz, bcols, brows, dayStars = [], pinLen = 0;
   function buildWipe() {
     bsz = W < 640 ? 22 : 30;
     bcols = Math.ceil(W / bsz); brows = Math.ceil(H / bsz);
     blocks = [];
     for (let y = 0; y < brows; y++) for (let x = 0; x < bcols; x++)
       blocks.push({ x, y, r: Math.random() * 0.62 + (1 - y / brows) * 0.38, g: rnd(SCRAMBLE) });
-    // black stars that appear on the white as each block turns over
+    // Black stars for the white side of the wipe. They are fixed to the page, not the pinned screen,
+    // so they scroll with the studio section's stars and read as one sky.
+    pinLen = track.offsetHeight - hero.offsetHeight;
+    const tr = track.getBoundingClientRect();
+    const avoid = [...document.querySelectorAll('.day .kicker,.day .lede .ln,.day .cols h2,.day .cols p,.day footer > *')].map(e => {
+      const r = e.getBoundingClientRect();
+      return { x0: r.left - 14, x1: r.right + 14, y0: r.top - tr.top - 10, y1: r.bottom - tr.top + 10 };
+    });
     dayStars = [];
-    const n = Math.round((W * H) / 7000);
-    for (let i = 0; i < n; i++) {
-      const x = Math.random() * W, y = Math.random() * H;
-      dayStars.push({ x, y, b: blocks[Math.floor(y / bsz) * bcols + Math.floor(x / bsz)], size: 8 + Math.random() * 5,
+    const span = H + pinLen, n = Math.round((W * span) / 11000);
+    for (let tries = 0; dayStars.length < n && tries < n * 6; tries++) {
+      const x = Math.random() * W, y = Math.random() * span;
+      if (avoid.some(a => x > a.x0 && x < a.x1 && y > a.y0 && y < a.y1)) continue;
+      dayStars.push({ x, y, size: 10 + Math.random() * 6,
         phase: Math.random() * 6.28, speed: 0.6 + Math.random() * 1.4, base: Math.random() < 0.15 ? 2 : Math.random() < 0.5 ? 1 : 0 });
     }
   }
@@ -337,14 +345,18 @@ footer a:hover{text-decoration:underline;text-underline-offset:4px}
     }
     fctx.globalCompositeOperation = 'source-over';
     const t = now / 1000;
+    const off = p * pinLen;                                // how far the page has moved under the pinned screen
     for (const st of dayStars) {
-      const s = (w * 1.3 - st.b.r) / 0.3;
-      if (s < 1) continue;                                 // only once its block is white
+      const y = st.y - off;
+      if (y < -20 || y > H + 20) continue;
+      const b = blocks[clamp(Math.floor(y / bsz), 0, brows - 1) * bcols + clamp(Math.floor(st.x / bsz), 0, bcols - 1)];
+      const s = (w * 1.3 - b.r) / 0.3;
+      if (s < 1) continue;                                 // only once the block under it is white
       const appear = clamp((s - 1) / 0.6);
       const tw = reduce ? 0.6 : 0.5 + 0.5 * Math.sin(t * st.speed + st.phase);
       fctx.font = `500 ${st.size}px "Geist Mono", ui-monospace, monospace`;
-      fctx.fillStyle = `rgba(10,10,10,${((0.1 + tw * 0.34) * appear).toFixed(3)})`;
-      fctx.fillText(['.', '+', '*'][Math.min(2, st.base + (tw > 0.85 ? 1 : 0))], st.x, st.y);
+      fctx.fillStyle = `rgba(10,10,10,${((0.12 + tw * 0.45) * appear).toFixed(3)})`;
+      fctx.fillText(['.', '+', '*'][Math.min(2, st.base + (tw > 0.85 ? 1 : 0))], st.x, y);
     }
     fctx.textAlign = 'start'; fctx.textBaseline = 'top';
   }
@@ -440,10 +452,11 @@ footer a:hover{text-decoration:underline;text-underline-offset:4px}
       const r = e.getBoundingClientRect();
       return { x0: r.left - d.left - 14, x1: r.right - d.left + 14, y0: r.top - d.top - 10, y1: r.bottom - d.top + 10 };
     });
-    const count = Math.round((SW * SH) / 11000);
+    const shared = Math.max(0, track.getBoundingClientRect().bottom - d.top);   // overlap with the transition's sky
+    const count = Math.round((SW * Math.max(0, SH - shared)) / 11000);
     stars = [];
     for (let tries = 0; stars.length < count && tries < count * 6; tries++) {
-      const x = Math.random() * SW, y = Math.random() * SH;
+      const x = Math.random() * SW, y = shared + Math.random() * (SH - shared);
       if (avoid.some(a => x > a.x0 && x < a.x1 && y > a.y0 && y < a.y1)) continue;
       stars.push({ x, y, size: 10 + Math.random() * 6, phase: Math.random() * 6.28, speed: 0.6 + Math.random() * 1.4, base: Math.random() < 0.15 ? 2 : Math.random() < 0.5 ? 1 : 0 });
     }
