@@ -297,15 +297,23 @@ footer a:hover{text-decoration:underline;text-underline-offset:4px}
   }
 
   // ---------- pixel wipe: night to day ----------
-  let blocks, bsz, bcols, brows;
+  let blocks, bsz, bcols, brows, dayStars = [];
   function buildWipe() {
     bsz = W < 640 ? 22 : 30;
     bcols = Math.ceil(W / bsz); brows = Math.ceil(H / bsz);
     blocks = [];
     for (let y = 0; y < brows; y++) for (let x = 0; x < bcols; x++)
       blocks.push({ x, y, r: Math.random() * 0.62 + (1 - y / brows) * 0.38, g: rnd(SCRAMBLE) });
+    // black stars that appear on the white as each block turns over
+    dayStars = [];
+    const n = Math.round((W * H) / 7000);
+    for (let i = 0; i < n; i++) {
+      const x = Math.random() * W, y = Math.random() * H;
+      dayStars.push({ x, y, b: blocks[Math.floor(y / bsz) * bcols + Math.floor(x / bsz)], size: 10 + Math.random() * 7,
+        phase: Math.random() * 6.28, speed: 0.6 + Math.random() * 1.4, base: Math.random() < 0.15 ? 2 : Math.random() < 0.5 ? 1 : 0 });
+    }
   }
-  function drawWipe(p) {
+  function drawWipe(p, now) {
     const w = clamp((p - 0.15) / 0.6);
     vignette.style.opacity = (1 - w).toFixed(3);
     hero.style.pointerEvents = w > 0.98 ? 'none' : '';
@@ -328,6 +336,16 @@ footer a:hover{text-decoration:underline;text-underline-offset:4px}
       }
     }
     fctx.globalCompositeOperation = 'source-over';
+    const t = now / 1000;
+    for (const st of dayStars) {
+      const s = (w * 1.3 - st.b.r) / 0.3;
+      if (s < 1) continue;                                 // only once its block is white
+      const appear = clamp((s - 1) / 0.6);
+      const tw = reduce ? 0.6 : 0.5 + 0.5 * Math.sin(t * st.speed + st.phase);
+      fctx.font = `500 ${st.size}px "Geist Mono", ui-monospace, monospace`;
+      fctx.fillStyle = `rgba(10,10,10,${((0.14 + tw * 0.46) * appear).toFixed(3)})`;
+      fctx.fillText(['.', '+', '*'][Math.min(2, st.base + (tw > 0.85 ? 1 : 0))], st.x, st.y);
+    }
     fctx.textAlign = 'start'; fctx.textBaseline = 'top';
   }
 
@@ -422,10 +440,10 @@ footer a:hover{text-decoration:underline;text-underline-offset:4px}
       const r = e.getBoundingClientRect();
       return { x0: r.left - d.left - 14, x1: r.right - d.left + 14, y0: r.top - d.top - 10, y1: r.bottom - d.top + 10 };
     });
-    const count = Math.round((SW * SH) / 15000);
+    const count = Math.round((SW * SH) / 8000);
     stars = [];
     for (let tries = 0; stars.length < count && tries < count * 6; tries++) {
-      const x = Math.random() * SW, y = Math.random() * SH;
+      const x = Math.random() * SW, y = Math.pow(Math.random(), 1.35) * SH;
       if (avoid.some(a => x > a.x0 && x < a.x1 && y > a.y0 && y < a.y1)) continue;
       stars.push({ x, y, size: 10 + Math.random() * 6, phase: Math.random() * 6.28, speed: 0.6 + Math.random() * 1.4, base: Math.random() < 0.15 ? 2 : Math.random() < 0.5 ? 1 : 0 });
     }
@@ -489,7 +507,7 @@ footer a:hover{text-decoration:underline;text-underline-offset:4px}
     if (now - last < 1000 / 30) return;                   // 30fps is plenty for the feed
     last = now;
     const p = progress();
-    drawFeed(now, p); drawTitle(now, p); drawWipe(p);
+    drawFeed(now, p); drawTitle(now, p); drawWipe(p, now);
   }
 
   const go = () => {
