@@ -8,7 +8,7 @@
 <meta property="og:title" content="Far Shore Works">
 <meta property="og:description" content="An independent studio making games and apps.">
 <meta name="theme-color" content="#0a0a0a">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%230a0a0a'/%3E%3Ctext x='16' y='21' font-family='monospace' font-size='13' fill='%23f2f2ee' text-anchor='middle'%3E[F]%3C/text%3E%3C/svg%3E">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
 <link rel="preload" href="assets/fonts/geist-latin-var.woff2" as="font" type="font/woff2" crossorigin>
 <style>
 @font-face{font-family:"Geist";src:url(assets/fonts/geist-latin-var.woff2) format("woff2");font-weight:100 900;font-display:block}
@@ -21,6 +21,8 @@
   --ink-2:#141414;        /* panels on night */
   --paper:#f2f2ee;        /* day */
   --paper-2:#e4e4df;      /* rules on day */
+  --lav:#c4b5fd;          /* soft lavender: accents on night */
+  --lav-ink:#6650d2;      /* deeper lavender: readable accents on day */
   --dim:rgba(242,242,238,.5);
   --dim-ink:rgba(10,10,10,.55);
   --display:"Geist","Helvetica Neue",Arial,sans-serif;
@@ -48,8 +50,9 @@ html.lenis,html.lenis body{height:auto}
 
 .bar{position:absolute;z-index:3;left:0;right:0;top:0;display:flex;justify-content:space-between;align-items:center;
   padding:max(var(--pad),env(safe-area-inset-top)) max(var(--pad),env(safe-area-inset-right)) 0 max(var(--pad),env(safe-area-inset-left))}
-.mark{letter-spacing:.32em}
-.mark b{font-weight:500;color:var(--dim)}
+.logo{display:inline-flex;color:var(--paper)}
+.logo-mark{display:block;height:34px;width:auto}
+@media (max-width:640px){.logo-mark{height:28px}}
 .bar a{text-decoration:none;display:inline-flex;gap:.6em;align-items:center}
 .bar a:hover span{text-decoration:underline;text-underline-offset:4px}
 
@@ -63,7 +66,7 @@ html.lenis,html.lenis body{height:auto}
 .readout{position:absolute;z-index:3;right:max(var(--pad),env(safe-area-inset-right));bottom:max(var(--pad),env(safe-area-inset-bottom));
   display:grid;gap:6px;justify-items:end;text-align:right;color:var(--dim)}
 .readout .on{color:var(--paper)}
-.tick{display:inline-block;width:.6em;height:.6em;background:var(--paper);margin-right:.5em;vertical-align:.05em}
+.tick{display:inline-block;width:.6em;height:.6em;background:var(--lav);margin-right:.5em;vertical-align:.05em}
 @media (prefers-reduced-motion:no-preference){.tick{animation:blink 1.6s steps(2,start) infinite}@keyframes blink{to{opacity:.15}}}
 /* The wipe turns the screen fully white first; the studio section then rises in from below. */
 .day{z-index:3;margin-top:-38vh;margin-top:-38svh;min-height:100vh;min-height:100svh}
@@ -98,7 +101,9 @@ html.lenis,html.lenis body{height:auto}
 /* the word in the brackets: a one-line window that scrolls up to the next word */
 .rot{display:inline-block;height:1em;overflow:hidden;vertical-align:top;padding:0 .04em}
 .rot-in{display:flex;flex-direction:column;align-items:flex-start}
-.rot-in b{display:block;height:1em;line-height:1;font-weight:600;white-space:nowrap}
+.rot-in b{display:block;height:1em;line-height:1;font-weight:600;white-space:nowrap;color:var(--lav-ink)}
+.n{color:var(--lav-ink)}
+.day ::selection{background:var(--lav);color:var(--ink)}
 /* three tall rows that alternate left and right down the page */
 .rows{display:grid;gap:clamp(140px,22vh,260px);margin-top:clamp(140px,22vh,260px)}
 .blk{width:min(560px,50%);min-width:0}
@@ -106,7 +111,8 @@ html.lenis,html.lenis body{height:auto}
 .idx{margin:0 0 22px;padding-top:14px;border-top:1px solid var(--ink);color:var(--dim-ink)}
 .head{margin:0;font:600 clamp(40px,5.4vw,80px)/.96 var(--display);text-transform:uppercase;letter-spacing:-.045em}
 .body{margin:26px 0 0;max-width:38ch;font-size:clamp(17px,1.35vw,20px);line-height:1.55}
-.body a{text-decoration:underline;text-underline-offset:4px;text-decoration-thickness:1px}
+.body a{text-decoration:underline;text-underline-offset:4px;text-decoration-thickness:1px;text-decoration-color:var(--lav-ink)}
+.body a:hover,footer a:hover{color:var(--lav-ink)}
 .reveal{opacity:0;transform:translateY(22px);transition:opacity .9s ease,transform 1s cubic-bezier(.2,.7,.2,1)}
 .blk .body.reveal{transition-delay:.18s}
 .blk.in .reveal{opacity:1;transform:none}
@@ -119,6 +125,8 @@ html.lenis,html.lenis body{height:auto}
 }
 footer{margin-top:clamp(140px,22vh,240px);display:flex;flex-wrap:wrap;justify-content:space-between;gap:10px 24px;color:var(--dim-ink)}
 footer a{text-decoration:none}
+.foot-id{display:inline-flex;align-items:center;gap:12px}
+.foot-logo{color:var(--ink)}.foot-logo .logo-mark{height:22px}
 footer a:hover{text-decoration:underline;text-underline-offset:4px}
 </style>
 </head>
@@ -134,7 +142,7 @@ footer a:hover{text-decoration:underline;text-underline-offset:4px}
     <div class="vignette" aria-hidden="true"></div>
 
     <div class="bar">
-      <span class="mono mark">[<b>F</b>S<b>W</b>]</span>
+      <span class="logo" role="img" aria-label="Far Shore Works"><svg class="logo-mark" viewBox="0 0 579.21 652.33" aria-hidden="true" focusable="false"><g fill="currentColor"><path d="M298.94,643.34c-.3,5.42-4.21,8.39-7.98,8.93-3.38.49-9.64-2.06-9.93-7.07l-16.16-279.62-53.76,45.96-77.21,67.62c-2.96,1.61-6.67,1.41-8.78-1.13-1.64-1.98-1.61-5.71.17-8.42l57.32-66.62,54.21-64.36-227.32-15.12c-5.66-.38-9.24-4.17-9.49-9.22-.21-4.23,3.16-9.22,8.84-9.6l228.22-15.11-111.78-131.05c-2.11-2.47-1.71-6.85-.15-8.48,2.12-2.2,5.59-2.42,8.59-1.13l52.78,46.17,78.28,67.64,10.98-177.69,4.69-76.01c.47-5.54,4.75-9.21,9.6-9.02,5.26.2,8.64,4.08,8.99,9.91l15.34,252.77,67.75-58.15,62.38-54.56c2.65-1.92,6.19-2.59,8.44-.98,2.74,1.95,3.3,5.79,1.48,9.1l-111.97,131.42,227.91,15.15c5.37.36,8.59,4.47,8.82,8.91s-3.02,9.4-8.56,9.77l-228.27,15.17,26.76,32.02,85.62,100.07c1.53,1.79.69,6.3-.57,7.65-1.73,1.88-5.19,2.29-8.29,1.2l-84.69-74.04-46.78-39.77-7.67,135.32L298.94,643.34Z"/><path d="M413.29,343.82c-3.76,14.86-10.19,28.73-18.74,41.05l2.46,2.87c6.77-8.92,12.41-18.7,16.64-29.18q3.13-7.52,5.28-15.11L413.29,343.82ZM165.47,343.92l-5.61-.38c1.44,5.02,3.19,10.03,5.26,15.02,4.3,10.63,10.04,20.56,16.94,29.57l2.41-2.85C175.79,372.88,169.27,358.89,165.47,343.92ZM207.56,200.06l9.04,7.82c12.87-9,27.36-15.66,42.77-19.45l.81-13.05C240.5,179.7,222.7,188.33,207.56,200.06ZM156.6,284.88l8.15-.53c3.49-15.5,9.85-29.86,18.41-42.57l-6.68-7.83C166.56,249.3,159.7,266.63,156.6,284.88ZM258.95,436.47c-14.68-3.59-28.39-9.74-40.61-17.96l-.69.6-.97.84c12.97,8.35,27.34,14.52,42.36,18.04L258.95,436.47ZM360.73,418.29c-12.13,8.2-25.72,14.39-40.29,18.02l-.09,1.54c14.92-3.57,29.17-9.77,42.05-18.11L360.73,418.29ZM402.59,234.38l-6.76,7.94c8.42,12.67,14.63,26.86,18.08,41.93l8.25.55C419.08,266.75,412.33,249.61,402.59,234.38ZM319.12,175.48l.8,13.1c15.56,3.8,29.99,10.53,42.72,19.53l9-7.73C356.55,188.6,338.77,179.89,319.12,175.48Z"/><path d="M448.22,252.58c-6.2-15.34-14.76-29.54-25.16-42.22l-2.93,3.44c15.84,21.05,26.69,45.96,30.77,72.9l7.7.53C456.42,275.64,452.99,264.05,448.22,252.58ZM449.94,341.39c-4.89,26.44-16.25,50.46-32.19,70.59l8.74,10.21c17.78-23.62,29.57-51.68,33.53-81.46L449.94,341.39ZM261.01,472.08c-.71-.11-1.42-.26-2.13-.4-24.87-4.62-47.74-15.08-67.23-29.81l-11.21,9.82c22.7,18.8,50.47,31.99,81.53,36.93L261.01,472.08ZM128.96,341.49l-10.19-.68c3.99,29.91,15.87,58.08,33.81,81.76l8.84-10.27C145.26,391.87,133.88,367.63,128.96,341.49ZM186.02,181.38l2.35,2.05c20.94-16.55,46-28.11,73.33-32.74l.12-1.83C234.37,153.3,208.23,164.72,186.02,181.38ZM130.56,252.58c-4.78,11.49-8.22,23.12-10.39,34.72l7.77-.51c4.08-27.13,15.03-52.21,31.04-73.35l-2.95-3.46C145.5,222.76,136.83,237.08,130.56,252.58ZM387.39,441.6c-20.16,15.2-43.76,25.82-68.98,30.46l-.93,16.44c30.93-5.05,58.57-18.27,81.16-37.07L387.39,441.6ZM317.51,148.95l.11,1.83c27.27,4.73,52.28,16.34,73.17,32.92l2.34-2.06C370.98,164.95,344.91,153.48,317.51,148.95Z"/></g></svg></span>
       <a class="mono" href="https://github.com/Far-Shore-Works"><span>GitHub</span> ↗</a>
     </div>
 
@@ -159,7 +167,7 @@ footer a:hover{text-decoration:underline;text-underline-offset:4px}
 <main class="day" id="day">
   <div class="wrap">
     <div class="statement">
-      <p class="mono kicker">[ 01 ] The studio</p>
+      <p class="mono kicker"><span class="n">[ 01 ]</span> The studio</p>
       <p class="lede" id="lede">
         <span class="sr">An independent studio making games, apps and systems, built carefully and made to last.</span>
         <span class="ln" aria-hidden="true">An independent studio</span>
@@ -171,24 +179,24 @@ footer a:hover{text-decoration:underline;text-underline-offset:4px}
 
     <section class="rows" aria-label="About the studio">
       <article class="blk">
-        <p class="mono idx reveal">[ 02 ] What we make</p>
+        <p class="mono idx reveal"><span class="n">[ 02 ]</span> What we make</p>
         <h2 class="head">Games, apps<br>&amp; systems</h2>
         <p class="body reveal">Games for PC come first. Around them we build apps and the systems that run underneath, plus smaller experiments for phones and Roblox when an idea fits.</p>
       </article>
       <article class="blk">
-        <p class="mono idx reveal">[ 03 ] Right now</p>
+        <p class="mono idx reveal"><span class="n">[ 03 ]</span> Right now</p>
         <h2 class="head">Our first<br>game</h2>
         <p class="body reveal">It's in development now. We'll show it here when it's ready, and until then the work happens in the open on <a href="https://github.com/Far-Shore-Works">GitHub</a>.</p>
       </article>
       <article class="blk">
-        <p class="mono idx reveal">[ 04 ] Who we are</p>
+        <p class="mono idx reveal"><span class="n">[ 04 ]</span> Who we are</p>
         <h2 class="head">Two people,<br>one studio</h2>
         <p class="body reveal">Far Shore Works is a two-person independent studio with roots in Louisiana. A small team, so every project gets our full attention.</p>
       </article>
     </section>
 
     <footer class="mono">
-      <span>© 2026 Far Shore Works</span>
+      <span class="foot-id"><span class="logo foot-logo" aria-hidden="true"><svg class="logo-mark" viewBox="0 0 579.21 652.33" aria-hidden="true" focusable="false"><g fill="currentColor"><path d="M298.94,643.34c-.3,5.42-4.21,8.39-7.98,8.93-3.38.49-9.64-2.06-9.93-7.07l-16.16-279.62-53.76,45.96-77.21,67.62c-2.96,1.61-6.67,1.41-8.78-1.13-1.64-1.98-1.61-5.71.17-8.42l57.32-66.62,54.21-64.36-227.32-15.12c-5.66-.38-9.24-4.17-9.49-9.22-.21-4.23,3.16-9.22,8.84-9.6l228.22-15.11-111.78-131.05c-2.11-2.47-1.71-6.85-.15-8.48,2.12-2.2,5.59-2.42,8.59-1.13l52.78,46.17,78.28,67.64,10.98-177.69,4.69-76.01c.47-5.54,4.75-9.21,9.6-9.02,5.26.2,8.64,4.08,8.99,9.91l15.34,252.77,67.75-58.15,62.38-54.56c2.65-1.92,6.19-2.59,8.44-.98,2.74,1.95,3.3,5.79,1.48,9.1l-111.97,131.42,227.91,15.15c5.37.36,8.59,4.47,8.82,8.91s-3.02,9.4-8.56,9.77l-228.27,15.17,26.76,32.02,85.62,100.07c1.53,1.79.69,6.3-.57,7.65-1.73,1.88-5.19,2.29-8.29,1.2l-84.69-74.04-46.78-39.77-7.67,135.32L298.94,643.34Z"/><path d="M413.29,343.82c-3.76,14.86-10.19,28.73-18.74,41.05l2.46,2.87c6.77-8.92,12.41-18.7,16.64-29.18q3.13-7.52,5.28-15.11L413.29,343.82ZM165.47,343.92l-5.61-.38c1.44,5.02,3.19,10.03,5.26,15.02,4.3,10.63,10.04,20.56,16.94,29.57l2.41-2.85C175.79,372.88,169.27,358.89,165.47,343.92ZM207.56,200.06l9.04,7.82c12.87-9,27.36-15.66,42.77-19.45l.81-13.05C240.5,179.7,222.7,188.33,207.56,200.06ZM156.6,284.88l8.15-.53c3.49-15.5,9.85-29.86,18.41-42.57l-6.68-7.83C166.56,249.3,159.7,266.63,156.6,284.88ZM258.95,436.47c-14.68-3.59-28.39-9.74-40.61-17.96l-.69.6-.97.84c12.97,8.35,27.34,14.52,42.36,18.04L258.95,436.47ZM360.73,418.29c-12.13,8.2-25.72,14.39-40.29,18.02l-.09,1.54c14.92-3.57,29.17-9.77,42.05-18.11L360.73,418.29ZM402.59,234.38l-6.76,7.94c8.42,12.67,14.63,26.86,18.08,41.93l8.25.55C419.08,266.75,412.33,249.61,402.59,234.38ZM319.12,175.48l.8,13.1c15.56,3.8,29.99,10.53,42.72,19.53l9-7.73C356.55,188.6,338.77,179.89,319.12,175.48Z"/><path d="M448.22,252.58c-6.2-15.34-14.76-29.54-25.16-42.22l-2.93,3.44c15.84,21.05,26.69,45.96,30.77,72.9l7.7.53C456.42,275.64,452.99,264.05,448.22,252.58ZM449.94,341.39c-4.89,26.44-16.25,50.46-32.19,70.59l8.74,10.21c17.78-23.62,29.57-51.68,33.53-81.46L449.94,341.39ZM261.01,472.08c-.71-.11-1.42-.26-2.13-.4-24.87-4.62-47.74-15.08-67.23-29.81l-11.21,9.82c22.7,18.8,50.47,31.99,81.53,36.93L261.01,472.08ZM128.96,341.49l-10.19-.68c3.99,29.91,15.87,58.08,33.81,81.76l8.84-10.27C145.26,391.87,133.88,367.63,128.96,341.49ZM186.02,181.38l2.35,2.05c20.94-16.55,46-28.11,73.33-32.74l.12-1.83C234.37,153.3,208.23,164.72,186.02,181.38ZM130.56,252.58c-4.78,11.49-8.22,23.12-10.39,34.72l7.77-.51c4.08-27.13,15.03-52.21,31.04-73.35l-2.95-3.46C145.5,222.76,136.83,237.08,130.56,252.58ZM387.39,441.6c-20.16,15.2-43.76,25.82-68.98,30.46l-.93,16.44c30.93-5.05,58.57-18.27,81.16-37.07L387.39,441.6ZM317.51,148.95l.11,1.83c27.27,4.73,52.28,16.34,73.17,32.92l2.34-2.06C370.98,164.95,344.91,153.48,317.51,148.95Z"/></g></svg></span>© 2026 Far Shore Works</span>
       <a href="https://github.com/Far-Shore-Works">github.com/Far-Shore-Works ↗</a>
     </footer>
   </div>
@@ -239,14 +247,14 @@ footer a:hover{text-decoration:underline;text-underline-offset:4px}
   const FS = `precision highp float;
 uniform sampler2D uVideo,uAtlas;uniform vec2 uRes,uCell,uAG,uAUse;uniform vec4 uCover;
 uniform float uLo,uHi,uTime,uIntro,uFade,uSweep,uGlitch,uWipe,uBlock,uBRows,uHasVideo,uRampLen,uScr,uScrLen,uFaint,uPlus;
-const vec3 INK=vec3(.0392),PAPER=vec3(.949,.949,.933);
+const vec3 INK=vec3(.0392),PAPER=vec3(.949,.949,.933),LAV=vec3(.769,.71,.992);
 float hash(vec2 p){p=fract(p*vec2(123.34,456.21));p+=dot(p,p+45.32);return fract(p.x*p.y);}
 float glyph(float i,vec2 l){float c=mod(i,uAG.x),r=floor(i/uAG.x);return texture2D(uAtlas,(vec2(c,r)+l)*uAUse).a;}
 float eio(float t){return t<.5?4.*t*t*t:1.-pow(-2.*t+2.,3.)/2.;}
 void main(){
   vec2 f=vec2(gl_FragCoord.x,uRes.y-gl_FragCoord.y);
   vec2 cell=floor(f/uCell),luv=fract(f/uCell);
-  float h1=hash(cell),h2=hash(cell+17.31),h3=hash(cell+91.7),m=0.;
+  float h1=hash(cell),h2=hash(cell+17.31),h3=hash(cell+91.7),m=0.,lw=0.;
   if(h1*.9+(cell.y*uCell.y/uRes.y)*.25<=uIntro*1.15&&h2>=1.-uFade){
     vec2 suv=(cell+.5)*uCell/uRes;
     float v=uHasVideo>.5?texture2D(uVideo,uCover.xy+suv*uCover.zw).r:0.;
@@ -260,18 +268,19 @@ void main(){
       float j=hash(cell+t+.5)<.35?floor(hash(cell+t)*3.)-1.:0.;
       i=clamp(floor(v*(uRampLen-1.)+.5)+j,0.,uRampLen-1.);
       a=(.22+v*.78)*.6;
-      float n=abs(cell.y-uSweep);if(n<4.)a=min(1.,a+(1.-n/4.)*.12);
+      lw=smoothstep(.6,.9,v)*(.8+.2*h1);           // the hottest light glows lavender
+      float n=abs(cell.y-uSweep);if(n<4.){a=min(1.,a+(1.-n/4.)*.12);lw=max(lw,(1.-n/4.)*.7);}
     }
-    if(uGlitch>.5){float g=floor(uTime*30.);if(hash(cell+g)<.5){i=uScr+floor(hash(cell+g+3.3)*uScrLen);a=min(1.,a+hash(cell+g+7.7)*.5);}}
+    if(uGlitch>.5){float g=floor(uTime*30.);if(hash(cell+g)<.5){i=uScr+floor(hash(cell+g+3.3)*uScrLen);a=min(1.,a+hash(cell+g+7.7)*.5);lw=step(.6,hash(cell+g+1.9));}}
     m=glyph(i,luv)*a;
   }
-  vec3 col=mix(INK,PAPER,m);float o=1.;
+  vec3 col=mix(INK,mix(PAPER,LAV,lw),m);float o=1.;
   if(uWipe>0.){
     vec2 b=floor(f/uBlock),bl=fract(f/uBlock);
     float r=hash(b+41.3)*.62+(1.-b.y/uBRows)*.38,s=(uWipe*1.3-r)/.3;
     if(s>0.){
       if(s<.45){vec2 gs=vec2(.341,.6875),g2=(bl-(.5-gs*.5))/gs;
-        if(g2.x>=0.&&g2.x<=1.&&g2.y>=0.&&g2.y<=1.)col=mix(col,PAPER,glyph(uScr+floor(hash(b+7.1)*uScrLen),g2)*(s/.45));}
+        if(g2.x>=0.&&g2.x<=1.&&g2.y>=0.&&g2.y<=1.)col=mix(col,LAV,glyph(uScr+floor(hash(b+7.1)*uScrLen),g2)*(s/.45));}
       else{float k=eio(clamp((s-.45)/.55,0.,1.)),q=(1.-k)*.5;if(bl.x>=q&&bl.x<=1.-q&&bl.y>=q&&bl.y<=1.-q)o=0.;}
     }
   }
@@ -440,13 +449,14 @@ void main(){
   const bg = $('starfield'), bctx = bg.getContext('2d');
   let BW = 0, BH = 0, bdpr = 1, bgStars = [], shooters = [], nextShot = 0, lastBg = 0;
   const SPRITES = {};                                      // glyphs drawn once, stamped many times
-  function sprite(g, size) {
-    const key = g + size;
+  const LAV_STAR = '#8c78e8';
+  function sprite(g, size, color = INK) {
+    const key = g + size + color;
     if (SPRITES[key]) return SPRITES[key];
     const c = document.createElement('canvas'), px = Math.ceil(size * 1.4 * bdpr);
     c.width = c.height = px;
     const x = c.getContext('2d');
-    x.scale(bdpr, bdpr); x.fillStyle = INK; x.textAlign = 'center'; x.textBaseline = 'middle';
+    x.scale(bdpr, bdpr); x.fillStyle = color; x.textAlign = 'center'; x.textBaseline = 'middle';
     x.font = `500 ${size}px "Geist Mono", ui-monospace, monospace`;
     x.fillText(g, size * 0.7, size * 0.7);
     return (SPRITES[key] = c);
@@ -459,7 +469,8 @@ void main(){
     const n = Math.round((BW * BH) / 9000);
     bgStars = Array.from({ length: n }, () => ({
       x: Math.random() * BW, y: Math.random() * BH, size: [11, 13, 15][(Math.random() * 3) | 0],
-      phase: Math.random() * 6.28, speed: 0.6 + Math.random() * 1.4, base: Math.random() < 0.15 ? 2 : Math.random() < 0.5 ? 1 : 0
+      phase: Math.random() * 6.28, speed: 0.6 + Math.random() * 1.4, base: Math.random() < 0.15 ? 2 : Math.random() < 0.5 ? 1 : 0,
+      color: Math.random() < 0.12 ? LAV_STAR : INK
     }));
   }
   const STAR = ['.', '+', '*'], TRAIL = ['*', '=', '=', '-', '-', '-', '·', '·', '.', '.'];
@@ -469,7 +480,7 @@ void main(){
     const t = now / 1000, drift = scrollY * 0.12;          // a slight drift as you scroll gives depth
     for (const st of bgStars) {
       const tw = reduce ? 0.6 : 0.5 + 0.5 * Math.sin(t * st.speed + st.phase);
-      const spr = sprite(STAR[Math.min(2, st.base + (tw > 0.85 ? 1 : 0))], st.size);
+      const spr = sprite(STAR[Math.min(2, st.base + (tw > 0.85 ? 1 : 0))], st.size, st.color);
       const y = ((st.y - drift) % BH + BH) % BH;
       bctx.globalAlpha = 0.12 + tw * 0.45;
       bctx.drawImage(spr, (st.x - st.size * 0.7) * bdpr, (y - st.size * 0.7) * bdpr);
@@ -490,7 +501,7 @@ void main(){
         for (let j = 0; j < TRAIL.length; j++) {
           const back = j * 13; if (back > head) break;
           bctx.globalAlpha = (1 - j / TRAIL.length) * 0.85 * fadeOut;
-          bctx.drawImage(sprite(TRAIL[j], 16), (sh.x + dx * (head - back) - 11) * bdpr, (sh.y + dy * (head - back) - 11) * bdpr);
+          bctx.drawImage(sprite(TRAIL[j], 16, LAV_STAR), (sh.x + dx * (head - back) - 11) * bdpr, (sh.y + dy * (head - back) - 11) * bdpr);
         }
         return true;
       });
