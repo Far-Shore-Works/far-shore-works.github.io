@@ -42,13 +42,9 @@ html.lenis,html.lenis body{height:auto}
 .track{position:relative;height:175vh;height:175svh}
 .hero{position:sticky;top:0;height:100vh;height:100svh;min-height:520px;overflow:hidden;background:var(--ink)}
 .feed{position:absolute;inset:0;width:100%;height:100%;display:block;z-index:1}
-/* The real footage runs underneath the characters, dimmed and drained to greyscale. */
-#src{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:0;pointer-events:none;
-  filter:grayscale(1) contrast(1.25) brightness(.8);opacity:0;transition:opacity 1.4s ease}
-#src.on{opacity:.34}
-.scan{position:absolute;inset:0;z-index:1;pointer-events:none;
-  background:repeating-linear-gradient(to bottom,rgba(10,10,10,.55) 0 1px,transparent 1px 3px),
-             radial-gradient(120% 90% at 50% 45%,transparent 55%,rgba(10,10,10,.75))}
+/* The video is only a source: it is never shown, the characters draw the picture. */
+#src{position:absolute;width:2px;height:2px;opacity:0;pointer-events:none}
+.vignette{position:absolute;inset:0;z-index:2;pointer-events:none;background:radial-gradient(130% 100% at 55% 45%,transparent 60%,rgba(10,10,10,.7))}
 .wipe{position:absolute;inset:0;width:100%;height:100%;display:block;z-index:4;pointer-events:none}
 
 .bar{position:absolute;z-index:3;left:0;right:0;top:0;display:flex;justify-content:space-between;align-items:center;
@@ -97,8 +93,8 @@ footer a:hover{text-decoration:underline;text-underline-offset:4px}
     <video id="src" muted loop playsinline autoplay preload="auto" aria-hidden="true">
       <source src="assets/hero-ascii.mp4" type="video/mp4">
     </video>
-    <div class="scan" aria-hidden="true"></div>
     <canvas class="feed" id="feed" aria-hidden="true"></canvas>
+    <div class="vignette" aria-hidden="true"></div>
 
     <div class="bar">
       <span class="mono mark">[<b>F</b>S<b>W</b>]</span>
@@ -176,19 +172,19 @@ footer a:hover{text-decoration:underline;text-underline-offset:4px}
     dpr = Math.min(devicePixelRatio || 1, 2);
     W = hero.clientWidth; H = hero.clientHeight;
     for (const c of [feed, wipe]) { c.width = Math.round(W * dpr); c.height = Math.round(H * dpr); }
-    fs = W < 640 ? 9 : W < 1100 ? 10.5 : 12;
+    fs = W < 640 ? 8 : W < 1100 ? 9.5 : 10.5;
     cw = fs * 0.62; chH = fs * 1.25;
     cols = Math.ceil(W / cw); rows = Math.ceil(H / chH);
     sample.width = cols; sample.height = rows;
     cells = new Array(cols * rows);
     for (let i = 0; i < cells.length; i++) {
       const y = (i / cols) | 0;
-      cells[i] = { b: 0, ch: rnd(ALNUM), born: Math.random() * 0.9 + (y / rows) * 0.25, out: Math.random(), star: Math.random() < 0.012 ? Math.random() : 0 };
+      cells[i] = { b: 0, ch: rnd(FAINT), j: 0, born: Math.random() * 0.9 + (y / rows) * 0.25, out: Math.random(), star: Math.random() < 0.012 ? Math.random() : 0 };
     }
     // Characters thin out around the text so it always reads.
     const h = hero.getBoundingClientRect();
-    keepOut = [[title, 10, 0.5], ...[...hero.querySelectorAll('.sub,.readout,.bar > *')].map(e => [e, 14, 0.05])].map(([e, m, f]) => {
-      const r = e.getBoundingClientRect();
+    const lineRect = ln => { const a = ln.firstElementChild.getBoundingClientRect(), b = ln.lastElementChild.getBoundingClientRect(); return { left: a.left, right: b.right, top: a.top, bottom: a.bottom }; };
+    keepOut = [...[...title.querySelectorAll('.ln')].map(l => [lineRect(l), 8, 0.35]), ...[...hero.querySelectorAll('.sub,.readout > *,.bar > *')].map(e => [e.getBoundingClientRect(), 10, 0.08])].map(([r, m, f]) => {
       return { x0: (r.left - h.left - m) / cw, x1: (r.right - h.left + m) / cw, y0: (r.top - h.top - m) / chH, y1: (r.bottom - h.top + m) / chH, f };
     });
     buildWipe();
@@ -208,7 +204,7 @@ footer a:hover{text-decoration:underline;text-underline-offset:4px}
 
   // ---------- ASCII feed ----------
   const SCENES = [[0, 'Tide line'], [6.08, 'Moonrise'], [11.54, 'Low sun'], [17.42, 'Flare']];
-  const RAMP = ' .,:;-=+*';                               // low tones: light punctuation
+  const RAMP = "`.-':_,^=;><+!rc*/z?sLTv)J7(|Fi{C}fI31tlu[neoZ5Yxjya]2ESwqkP6h9d4VpOGbUAKXHm8RD#$Bg0MNWQ%&@";
   const LEVELS = 16;
   const buckets = Array.from({ length: LEVELS }, () => []);
   const hist = new Uint32Array(64);
@@ -238,18 +234,18 @@ footer a:hover{text-decoration:underline;text-underline-offset:4px}
         if (c.born > intro * 1.15) continue;
         if (c.out < (1 - fade)) continue;
         let v = data ? clamp((data[i * 4] / 255 - lo) / (hi - lo)) : 0;
-        v = Math.pow(v, 1.25);
+        v = Math.pow(v, 1.1);
         c.b += (v - c.b) * 0.4;                            // ease between frames so motion stays smooth
         let a, g, b = c.b;
-        if (b < 0.07) {
+        if (b < 0.04) {                                    // night: near-empty, a few stars
           if (c.star) { a = 0.18 + 0.4 * (0.5 + 0.5 * Math.sin(now / 900 + c.star * 40)); g = c.star > 0.5 ? '+' : '.'; }
-          else { a = 0.06; if (Math.random() < 0.004) c.ch = rnd(FAINT + ALNUM); g = c.ch; }
-        } else if (b < 0.34) {
-          a = 0.22 + b * 1.1; g = RAMP[1 + Math.min(RAMP.length - 2, ((b - 0.07) / 0.27 * (RAMP.length - 1)) | 0)];
-        } else if (b < 0.8) {
-          a = 0.35 + b * 0.7; if (Math.random() < 0.05) c.ch = rnd(ALNUM); g = c.ch;
-        } else { a = 1; g = rnd(DENSE); }
-        if (boost) { a = Math.min(1, a + boost); if (b > 0.07 && Math.random() < boost) g = rnd(DENSE); }
+          else { a = 0.05; if (Math.random() < 0.003) c.ch = rnd(FAINT); g = c.ch; }
+        } else {                                           // the glyph's density draws the picture
+          if (Math.random() < 0.04) c.j = ((Math.random() * 3) | 0) - 1;   // tiny shimmer within the ramp
+          const idx = Math.max(0, Math.min(RAMP.length - 1, Math.round(b * (RAMP.length - 1)) + (c.j || 0)));
+          g = RAMP[idx]; a = 0.3 + b * 0.7;
+        }
+        if (boost && b >= 0.04) a = Math.min(1, a + boost * 0.6);
         if (glitch && Math.random() < 0.5) { g = rnd(SCRAMBLE); a = Math.min(1, a + Math.random() * 0.5); }
         for (const k of keepOut) if (x > k.x0 && x < k.x1 && y > k.y0 && y < k.y1) { a *= k.f; break; }
         const lvl = Math.max(1, Math.min(LEVELS - 1, (a * LEVELS) | 0));
@@ -265,8 +261,6 @@ footer a:hover{text-decoration:underline;text-underline-offset:4px}
       fctx.fillStyle = `rgba(242,242,238,${(l / (LEVELS - 1)).toFixed(3)})`;
       for (let k = 0; k < bk.length; k += 3) fctx.fillText(bk[k + 2], bk[k] * cw, bk[k + 1] * chH);
     }
-    video.style.opacity = '';                              // the footage fades with the characters
-    if (video.classList.contains('on')) video.style.opacity = (0.34 * fade).toFixed(3);
 
     if (video.duration) {
       const t = video.currentTime;
@@ -368,8 +362,6 @@ footer a:hover{text-decoration:underline;text-underline-offset:4px}
   const go = () => {
     layout();
     if (reduce) { video.pause(); video.currentTime = 8; }
-    video.addEventListener('playing', () => video.classList.add('on'), { once: true });
-    if (reduce) video.addEventListener('seeked', () => video.classList.add('on'), { once: true });
     video.play && video.play().catch(() => {});
     requestAnimationFrame(tick);
   };
