@@ -30,7 +30,7 @@
 }
 *{box-sizing:border-box}
 html,body{margin:0}
-body{background:var(--ink);color:var(--paper);font:400 16px/1.55 var(--display);-webkit-font-smoothing:antialiased}
+body{background:var(--paper);color:var(--paper);font:400 16px/1.55 var(--display);-webkit-font-smoothing:antialiased}
 a{color:inherit}
 a:focus-visible{outline:1px solid currentColor;outline-offset:4px}
 html.lenis,html.lenis body{height:auto}
@@ -40,7 +40,7 @@ html.lenis,html.lenis body{height:auto}
 
 /* ---------- HERO (pinned while it dissolves) ---------- */
 .track{position:relative;z-index:2;height:200vh;height:200svh;background:var(--paper);pointer-events:none}
-.hero{position:sticky;top:0;height:100vh;height:100svh;min-height:520px;overflow:hidden;pointer-events:auto}
+.hero{position:sticky;top:0;height:100vh;height:100svh;min-height:520px;overflow:hidden;pointer-events:auto;background:var(--ink)}
 .feed{position:absolute;inset:0;width:100%;height:100%;display:block;z-index:1}
 /* The video is only a source: it is never shown, the characters draw the picture. */
 #src{position:absolute;width:2px;height:2px;opacity:0;pointer-events:none}
@@ -78,7 +78,7 @@ html.lenis,html.lenis body{height:auto}
 }
 
 /* ---------- STUDIO (day side) ---------- */
-.day{position:relative;background:var(--paper);color:var(--ink);
+.day{position:relative;background:transparent;color:var(--ink);
   padding:clamp(24px,4vw,48px) max(var(--pad),env(safe-area-inset-right)) max(40px,env(safe-area-inset-bottom)) max(var(--pad),env(safe-area-inset-left))}
 .day ::selection{background:var(--ink);color:var(--paper)}
 .wrap{position:relative;z-index:1;max-width:1240px;margin:0 auto}
@@ -309,7 +309,7 @@ footer a:hover{text-decoration:underline;text-underline-offset:4px}
     const n = Math.round((W * H) / 7000);
     for (let i = 0; i < n; i++) {
       const x = Math.random() * W, y = Math.random() * H;
-      dayStars.push({ x, y, b: blocks[Math.floor(y / bsz) * bcols + Math.floor(x / bsz)], size: 10 + Math.random() * 7,
+      dayStars.push({ x, y, b: blocks[Math.floor(y / bsz) * bcols + Math.floor(x / bsz)], size: 8 + Math.random() * 5,
         phase: Math.random() * 6.28, speed: 0.6 + Math.random() * 1.4, base: Math.random() < 0.15 ? 2 : Math.random() < 0.5 ? 1 : 0 });
     }
   }
@@ -343,7 +343,7 @@ footer a:hover{text-decoration:underline;text-underline-offset:4px}
       const appear = clamp((s - 1) / 0.6);
       const tw = reduce ? 0.6 : 0.5 + 0.5 * Math.sin(t * st.speed + st.phase);
       fctx.font = `500 ${st.size}px "Geist Mono", ui-monospace, monospace`;
-      fctx.fillStyle = `rgba(10,10,10,${((0.14 + tw * 0.46) * appear).toFixed(3)})`;
+      fctx.fillStyle = `rgba(10,10,10,${((0.1 + tw * 0.34) * appear).toFixed(3)})`;
       fctx.fillText(['.', '+', '*'][Math.min(2, st.base + (tw > 0.85 ? 1 : 0))], st.x, st.y);
     }
     fctx.textAlign = 'start'; fctx.textBaseline = 'top';
@@ -440,10 +440,10 @@ footer a:hover{text-decoration:underline;text-underline-offset:4px}
       const r = e.getBoundingClientRect();
       return { x0: r.left - d.left - 14, x1: r.right - d.left + 14, y0: r.top - d.top - 10, y1: r.bottom - d.top + 10 };
     });
-    const count = Math.round((SW * SH) / 8000);
+    const count = Math.round((SW * SH) / 11000);
     stars = [];
     for (let tries = 0; stars.length < count && tries < count * 6; tries++) {
-      const x = Math.random() * SW, y = Math.pow(Math.random(), 1.35) * SH;
+      const x = Math.random() * SW, y = Math.random() * SH;
       if (avoid.some(a => x > a.x0 && x < a.x1 && y > a.y0 && y < a.y1)) continue;
       stars.push({ x, y, size: 10 + Math.random() * 6, phase: Math.random() * 6.28, speed: 0.6 + Math.random() * 1.4, base: Math.random() < 0.15 ? 2 : Math.random() < 0.5 ? 1 : 0 });
     }
