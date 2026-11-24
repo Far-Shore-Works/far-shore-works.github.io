@@ -99,13 +99,25 @@ html.lenis,html.lenis body{height:auto}
 .rot{display:inline-block;height:1em;overflow:hidden;vertical-align:top;padding:0 .04em}
 .rot-in{display:flex;flex-direction:column;align-items:flex-start}
 .rot-in b{display:block;height:1em;line-height:1;font-weight:600;white-space:nowrap}
-.cols{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));margin-top:clamp(64px,9vw,120px);border-top:1px solid var(--ink)}
-.cols > div{padding:18px 24px 0 0;min-width:0}
-.cols > div + div{padding-left:24px;border-left:1px solid var(--paper-2)}
-.cols h2{margin:0 0 14px;color:var(--dim-ink)}
-.cols p{margin:0;max-width:34ch}
-@media (max-width:760px){.lede .ln{display:inline}.lede .ln::after{content:" "}.cols{grid-template-columns:1fr}.cols > div,.cols > div + div{padding:18px 0 22px;border-left:0;border-bottom:1px solid var(--paper-2)}}
-footer{margin-top:clamp(80px,10vw,140px);display:flex;flex-wrap:wrap;justify-content:space-between;gap:10px 24px;color:var(--dim-ink)}
+/* three tall rows that alternate left and right down the page */
+.rows{display:grid;gap:clamp(140px,22vh,260px);margin-top:clamp(140px,22vh,260px)}
+.blk{width:min(560px,50%);min-width:0}
+.blk:nth-child(even){margin-left:auto}
+.idx{margin:0 0 22px;padding-top:14px;border-top:1px solid var(--ink);color:var(--dim-ink)}
+.head{margin:0;font:600 clamp(40px,5.4vw,80px)/.96 var(--display);text-transform:uppercase;letter-spacing:-.045em}
+.body{margin:26px 0 0;max-width:38ch;font-size:clamp(17px,1.35vw,20px);line-height:1.55}
+.body a{text-decoration:underline;text-underline-offset:4px;text-decoration-thickness:1px}
+.reveal{opacity:0;transform:translateY(22px);transition:opacity .9s ease,transform 1s cubic-bezier(.2,.7,.2,1)}
+.blk .body.reveal{transition-delay:.18s}
+.blk.in .reveal{opacity:1;transform:none}
+@media (prefers-reduced-motion:reduce){.reveal{opacity:1;transform:none;transition:none}}
+@media (max-width:760px){
+  .lede .ln{display:inline}.lede .ln::after{content:" "}
+  .rows{gap:clamp(96px,16vh,140px);margin-top:clamp(96px,16vh,140px)}
+  .blk{width:auto}
+  .blk:nth-child(even){margin-left:16%}
+}
+footer{margin-top:clamp(140px,22vh,240px);display:flex;flex-wrap:wrap;justify-content:space-between;gap:10px 24px;color:var(--dim-ink)}
 footer a{text-decoration:none}
 footer a:hover{text-decoration:underline;text-underline-offset:4px}
 </style>
@@ -157,19 +169,22 @@ footer a:hover{text-decoration:underline;text-underline-offset:4px}
       </p>
     </div>
 
-    <section class="cols" aria-label="About the studio">
-      <div>
-        <h2 class="mono">What we make</h2>
-        <p>Games for PC first, then apps and smaller experiments for phones and Roblox when an idea fits.</p>
-      </div>
-      <div>
-        <h2 class="mono">Right now</h2>
-        <p>Our first game is in development. We'll share it here when it's ready to show.</p>
-      </div>
-      <div>
-        <h2 class="mono">Where</h2>
-        <p>A two-person studio with roots in Louisiana.</p>
-      </div>
+    <section class="rows" aria-label="About the studio">
+      <article class="blk">
+        <p class="mono idx reveal">[ 02 ] What we make</p>
+        <h2 class="head">Games, apps<br>&amp; systems</h2>
+        <p class="body reveal">Games for PC come first. Around them we build apps and the systems that run underneath, plus smaller experiments for phones and Roblox when an idea fits.</p>
+      </article>
+      <article class="blk">
+        <p class="mono idx reveal">[ 03 ] Right now</p>
+        <h2 class="head">Our first<br>game</h2>
+        <p class="body reveal">It's in development now. We'll show it here when it's ready, and until then the work happens in the open on <a href="https://github.com/Far-Shore-Works">GitHub</a>.</p>
+      </article>
+      <article class="blk">
+        <p class="mono idx reveal">[ 04 ] Who we are</p>
+        <h2 class="head">Two people,<br>one studio</h2>
+        <p class="body reveal">Far Shore Works is a two-person independent studio with roots in Louisiana. A small team, so every project gets our full attention.</p>
+      </article>
     </section>
 
     <footer class="mono">
@@ -483,6 +498,40 @@ void main(){
     bctx.globalAlpha = 1;
   }
 
+  // ---------- row headings roll in like the statement; text fades up beneath ----------
+  const heads = [...document.querySelectorAll('.blk .head')].map(h => {
+    const ls = [];
+    [...h.childNodes].forEach(node => {
+      if (node.nodeType !== 3) return;
+      const frag = document.createDocumentFragment();
+      node.textContent.split(/(\s+)/).forEach(part => {
+        if (!part) return;
+        if (/^\s+$/.test(part)) { frag.appendChild(document.createTextNode(' ')); return; }
+        const wd = document.createElement('span'); wd.className = 'wd';
+        [...part].forEach(ch => { const l = document.createElement('span'); l.className = 'l'; l.textContent = ch; wd.appendChild(l); ls.push(l); });
+        frag.appendChild(wd);
+      });
+      node.replaceWith(frag);
+    });
+    ls.forEach((l, i) => { l.dataset.d = (i / ls.length) * 0.5; });
+    h.setAttribute('aria-label', h.textContent);
+    return { h, ls };
+  });
+  const showBlk = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) { e.target.classList.add('in'); showBlk.unobserve(e.target); } }), { threshold: 0.25 });
+  document.querySelectorAll('.blk').forEach(b => showBlk.observe(b));
+  function drawHeads() {
+    for (const { h, ls } of heads) {
+      const r = h.getBoundingClientRect();
+      if (r.top > innerHeight * 1.1 || r.bottom < -innerHeight * 0.2) continue;
+      const P = reduce ? 1 : clamp((innerHeight * 0.95 - r.top) / (innerHeight * 0.45));
+      for (const l of ls) {
+        const k = 1 - Math.pow(1 - clamp((P - l.dataset.d) / 0.4), 3), q = 1 - k;
+        const tf = q < 0.001 ? 'none' : `translateY(${(q * 105).toFixed(2)}%) rotateX(${(-q * 70).toFixed(2)}deg) skewX(${(q * -12).toFixed(2)}deg)`;
+        if (l.style.transform !== tf) l.style.transform = tf;
+      }
+    }
+  }
+
   // ---------- loop ----------
   const progress = () => { const r = track.getBoundingClientRect(); return clamp(-r.top / (r.height - hero.offsetHeight)); };
   let last = 0, visible = true, heroDone = false;
@@ -490,6 +539,7 @@ void main(){
   function tick(now) {
     requestAnimationFrame(tick);
     drawLede(now);
+    drawHeads();
     if (document.hidden) return;
     const p = progress();
     const hr = hero.getBoundingClientRect();
