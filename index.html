@@ -210,8 +210,6 @@ footer a:hover{text-decoration:underline;text-underline-offset:4px}
   const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
   const $ = id => document.getElementById(id);
   const track = $('track'), hero = $('hero'), feed = $('feed'), vignette = hero.querySelector('.vignette'), video = $('src'), title = $('title'), frameEl = $('frame'), sceneEl = $('scene');
-  const sample = document.createElement('canvas');
-  const sctx = sample.getContext('2d', { willReadFrequently: true });
 
   const INK = '#0a0a0a', PAPER = '#f2f2ee';
   const FAINT = '.:·';
@@ -222,10 +220,11 @@ footer a:hover{text-decoration:underline;text-underline-offset:4px}
 
   // ---------- grid ----------
   let W, H, dpr, fs, cw, chH, rows, bsz, brows, start = performance.now();
+  let RS = 1;                                              // render scale for the hero; drops on slow graphics
   function layout() {
     dpr = Math.min(devicePixelRatio || 1, 2);
     W = hero.clientWidth; H = hero.clientHeight;
-    feed.width = Math.round(W * dpr); feed.height = Math.round(H * dpr);
+    feed.width = Math.round(W * dpr * RS); feed.height = Math.round(H * dpr * RS);
     fs = W < 640 ? 8 : W < 1100 ? 9.5 : 10.5;
     cw = fs * 0.62; chH = fs * 1.25;
     rows = Math.ceil(H / chH);
@@ -240,11 +239,10 @@ footer a:hover{text-decoration:underline;text-underline-offset:4px}
   const RAMP = "`.-':_,^=;><+!rc*/z?sLTv)J7(|Fi{C}fI31tlu[neoZ5Yxjya]2ESwqkP6h9d4VpOGbUAKXHm8RD#$Bg0MNWQ%&@";
   const ATLAS = RAMP + SCRAMBLE + FAINT + '+';
   const IDX = { rampLen: RAMP.length, scr: RAMP.length, scrLen: SCRAMBLE.length, faint: RAMP.length + SCRAMBLE.length, plus: ATLAS.length - 1 };
-  const hist = new Uint32Array(64);
   let lo = 0.05, hi = 0.7, scene = 0, glitchUntil = 0;
 
   const gl = feed.getContext('webgl', { premultipliedAlpha: true, alpha: true, antialias: false });
-  let U = {}, texVideo, texAtlas, AG = [16, 1], AUSE = [1, 1], lastTex = 0, lastLv = 0, glReady = false;
+  let U = {}, texVideo, texAtlas, AG = [16, 1], AUSE = [1, 1], lastTex = 0, glReady = false;
   const VS = 'attribute vec2 a;void main(){gl_Position=vec4(a,0.,1.);}';
   const FS = `precision highp float;
 uniform sampler2D uVideo,uAtlas;uniform vec2 uRes,uCell,uAG,uAUse;uniform vec4 uCover;
@@ -318,19 +316,21 @@ void main(){
     gl.uniform1f(U.uFaint, IDX.faint); gl.uniform1f(U.uPlus, IDX.plus);
     gl.uniform2f(U.uAG, AG[0], AG[1]); gl.uniform2f(U.uAUse, AUSE[0], AUSE[1]);
     gl.clearColor(0, 0, 0, 0);
+    try {                                                  // no real graphics card? start lighter
+      const dbg = gl.getExtension('WEBGL_debug_renderer_info');
+      const name = dbg ? gl.getParameter(dbg.UNMASKED_RENDERER_WEBGL) : '';
+      if (/swiftshader|llvmpipe|software|basic render/i.test(name)) { RS = 0.5; layout(); }
+    } catch (e) {}
     glReady = true;
   }
 
-  function levels() {                                      // auto-levels so flat footage still has shape
-    const vw = video.videoWidth; if (!vw) return;
-    sample.width = 64; sample.height = 36;
-    sctx.drawImage(video, 0, 0, 64, 36);
-    const d = sctx.getImageData(0, 0, 64, 36).data, n = 64 * 36;
-    hist.fill(0);
-    for (let i = 0; i < n; i++) hist[d[i * 4] >> 2]++;
-    const pick = q => { let acc = 0, t = n * q; for (let b = 0; b < 64; b++) { acc += hist[b]; if (acc >= t) return b / 63; } return 1; };
-    lo += (pick(0.04) - lo) * 0.3;
-    hi += (Math.max(pick(0.995), lo + 0.25) - hi) * 0.3;
+  // Auto-levels, measured ahead of time from the clip (4 samples a second) so the browser never
+  // has to read video frames back from the graphics card, which stutters on some machines.
+  const LEVELS = [[0.067,0.737],[0.067,0.735],[0.067,0.739],[0.067,0.718],[0.071,0.749],[0.071,0.743],[0.071,0.761],[0.075,0.774],[0.071,0.767],[0.075,0.763],[0.071,0.757],[0.067,0.745],[0.055,0.731],[0.051,0.718],[0.043,0.678],[0.039,0.665],[0.043,0.669],[0.043,0.647],[0.04,0.643],[0.043,0.625],[0.047,0.637],[0.051,0.639],[0.055,0.647],[0.063,0.653],[0.008,0.498],[0.008,0.506],[0.008,0.506],[0.008,0.506],[0.012,0.506],[0.012,0.506],[0.012,0.506],[0.012,0.504],[0.012,0.506],[0.012,0.506],[0.012,0.502],[0.012,0.496],[0.012,0.494],[0.012,0.496],[0.012,0.494],[0.012,0.49],[0.012,0.484],[0.012,0.476],[0.012,0.476],[0.012,0.48],[0.012,0.482],[0.012,0.482],[0.043,0.717],[0.043,0.717],[0.043,0.715],[0.039,0.717],[0.039,0.719],[0.039,0.715],[0.039,0.713],[0.039,0.713],[0.039,0.715],[0.039,0.714],[0.039,0.71],[0.039,0.71],[0.039,0.708],[0.039,0.696],[0.039,0.696],[0.039,0.694],[0.039,0.69],[0.039,0.686],[0.039,0.692],[0.039,0.698],[0.039,0.698],[0.039,0.696],[0.039,0.702],[0.039,0.706],[0.0,0.898],[0.0,0.898],[0.0,0.898],[0.0,0.898],[0.0,0.898],[0.0,0.898],[0.0,0.894],[0.0,0.894],[0.0,0.894],[0.0,0.894],[0.0,0.894],[0.0,0.894],[0.0,0.894],[0.0,0.894],[0.0,0.896],[0.0,0.898],[0.0,0.898],[0.0,0.898],[0.0,0.898],[0.0,0.898],[0.0,0.898],[0.0,0.898],[0.0,0.898],[0.0,0.898]];
+  function levels(t) {
+    const L = LEVELS[Math.min(LEVELS.length - 1, Math.floor(t * 4))];
+    lo += (L[0] - lo) * 0.08;
+    hi += (L[1] - hi) * 0.08;
   }
 
   function renderFeed(now, p) {
@@ -341,13 +341,13 @@ void main(){
       gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, texVideo);
       gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, video);
     }
-    if (has && now - lastLv > 120) { lastLv = now; levels(); }
+    if (has) levels(video.currentTime);
     let cx = 0, cy = 0, sx = 1, sy = 1;                      // cover-fit the video to the hero
     if (has) { const target = W / H, src = vw / vh; if (src > target) { sx = target / src; cx = (1 - sx) / 2; } else { sy = src / target; cy = (1 - sy) / 2; } }
     const t = reduce ? 8 : (now - start) / 1000;
     gl.viewport(0, 0, feed.width, feed.height);
     gl.uniform2f(U.uRes, feed.width, feed.height);
-    gl.uniform2f(U.uCell, cw * dpr, chH * dpr);
+    gl.uniform2f(U.uCell, cw * dpr * RS, chH * dpr * RS);
     gl.uniform4f(U.uCover, cx, cy, sx, sy);
     gl.uniform1f(U.uLo, lo); gl.uniform1f(U.uHi, hi);
     gl.uniform1f(U.uTime, t);
@@ -356,7 +356,7 @@ void main(){
     gl.uniform1f(U.uSweep, reduce ? -99 : (((now - start) / 7000) % 1) * (rows + 40) - 20);
     gl.uniform1f(U.uGlitch, now < glitchUntil ? 1 : 0);
     gl.uniform1f(U.uWipe, clamp((p - 0.15) / 0.6));
-    gl.uniform1f(U.uBlock, bsz * dpr); gl.uniform1f(U.uBRows, brows);
+    gl.uniform1f(U.uBlock, bsz * dpr * RS); gl.uniform1f(U.uBRows, brows);
     gl.uniform1f(U.uHasVideo, has ? 1 : 0);
     gl.drawArrays(gl.TRIANGLES, 0, 3);
   }
@@ -391,7 +391,8 @@ void main(){
     }
     const rest = hero.querySelectorAll('.sub,.readout,.bar');
     const o = (1 - clamp((p - 0.02) / 0.12)) * clamp((now - start - 900) / 600);
-    rest.forEach(e => e.style.opacity = (reduce ? 1 - clamp((p - 0.02) / 0.12) : o).toFixed(3));
+    const ro = (reduce ? 1 - clamp((p - 0.02) / 0.12) : o).toFixed(2);
+    rest.forEach(e => setStyle(e, 'opacity', ro));
   }
 
   // ---------- studio statement: letters roll up into place as you scroll (like TRACE) ----------
@@ -431,13 +432,14 @@ void main(){
       nextSwap = now + SWAP;
     }
     rotW += (rotTarget - rotW) * 0.14;                     // the brackets ease to each word's width
-    rot.style.width = (rotW * rotOpen).toFixed(1) + 'px';
+    const rw = (rotW * rotOpen).toFixed(1) + 'px';
+    if (rot.style.width !== rw) rot.style.width = rw;
   }
 
-  function drawLede(now) {
+  function drawLede(now, sy) {
     if (!ledeVisible) return;
-    const r = lede.getBoundingClientRect();
-    const P = reduce ? 1 : clamp((innerHeight * 1.0 - r.top) / (innerHeight * 0.5));
+    const top = G.lede - sy;                               // from cached geometry: no layout read mid-frame
+    const P = reduce ? 1 : clamp((VH * 1.0 - top) / (VH * 0.5));
     for (const l of letters) {
       const k = outCubic(clamp((P - l.dataset.d) / 0.35)), q = 1 - k;
       const tf = q < 0.001 ? 'none' : `translateY(${(q * 105).toFixed(2)}%) rotateX(${(-q * 70).toFixed(2)}deg) skewX(${(q * -12).toFixed(2)}deg)`;
@@ -477,13 +479,15 @@ void main(){
   }
   const STAR = ['.', '+', '*'], TRAIL = ['*', '=', '=', '-', '-', '-', '·', '·', '.', '.'];
   function drawBg(now) {
+    if (!shooters.length && now - lastBg < 1000 / 30) return;
+    lastBg = now;
     bctx.setTransform(1, 0, 0, 1, 0, 0);
     bctx.globalAlpha = 1; bctx.fillStyle = PAPER; bctx.fillRect(0, 0, bg.width, bg.height);
-    const t = now / 1000, drift = scrollY * 0.12;          // a slight drift as you scroll gives depth
+    const t = now / 1000;
     for (const st of bgStars) {
       const tw = reduce ? 0.6 : 0.5 + 0.5 * Math.sin(t * st.speed + st.phase);
       const spr = sprite(STAR[Math.min(2, st.base + (tw > 0.85 ? 1 : 0))], st.size, st.color);
-      const y = ((st.y - drift) % BH + BH) % BH;
+      const y = st.y;
       bctx.globalAlpha = 0.12 + tw * 0.45;
       bctx.drawImage(spr, (st.x - st.size * 0.7) * bdpr, (y - st.size * 0.7) * bdpr);
     }
@@ -532,11 +536,11 @@ void main(){
   });
   const showBlk = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) { e.target.classList.add('in'); showBlk.unobserve(e.target); } }), { threshold: 0.25 });
   document.querySelectorAll('.blk').forEach(b => showBlk.observe(b));
-  function drawHeads() {
-    for (const { h, ls } of heads) {
-      const r = h.getBoundingClientRect();
-      if (r.top > innerHeight * 1.1 || r.bottom < -innerHeight * 0.2) continue;
-      const P = reduce ? 1 : clamp((innerHeight * 0.95 - r.top) / (innerHeight * 0.45));
+  function drawHeads(sy) {
+    for (const hd of heads) {
+      const top = hd.top - sy, bottom = hd.bottom - sy, ls = hd.ls;
+      if (top > VH * 1.1 || bottom < -VH * 0.2) continue;
+      const P = reduce ? 1 : clamp((VH * 0.95 - top) / (VH * 0.45));
       for (const l of ls) {
         const k = 1 - Math.pow(1 - clamp((P - l.dataset.d) / 0.4), 3), q = 1 - k;
         const tf = q < 0.001 ? 'none' : `translateY(${(q * 105).toFixed(2)}%) rotateX(${(-q * 70).toFixed(2)}deg) skewX(${(q * -12).toFixed(2)}deg)`;
@@ -546,48 +550,65 @@ void main(){
   }
 
   // ---------- loop ----------
-  const progress = () => { const r = track.getBoundingClientRect(); return clamp(-r.top / (r.height - hero.offsetHeight)); };
-  let last = 0, visible = true, heroDone = false;
+  // Geometry is measured once (and again on resize or when fonts/images change the layout),
+  // so the per-frame work only does maths on the scroll position and never forces a layout.
+  const G = { track: 0, trackH: 1, heroH: 1, lede: 0 };
+  let VH = innerHeight;
+  function measure() {
+    const sy = scrollY;
+    VH = innerHeight;
+    G.track = track.getBoundingClientRect().top + sy;
+    G.trackH = track.offsetHeight; G.heroH = hero.offsetHeight;
+    G.lede = lede.getBoundingClientRect().top + sy;
+    for (const hd of heads) { const r = hd.h.getBoundingClientRect(); hd.top = r.top + sy; hd.bottom = r.bottom + sy; }
+  }
+  const progress = sy => clamp((sy - G.track) / Math.max(1, G.trackH - G.heroH));
+  const setStyle = (el, prop, val) => { if (el.style[prop] !== val) el.style[prop] = val; };   // write only on change
+  let last = 0, visible = true, heroDone = false, lenis = null, prevT = 0, slowAvg = 16, lastDrop = 0;
   new IntersectionObserver(([e]) => { visible = e.isIntersecting; }).observe(track);
   function tick(now) {
     requestAnimationFrame(tick);
-    drawLede(now);
-    drawHeads();
+    if (lenis) lenis.raf(now);                             // smooth scroll steps on the same clock as the drawing
     if (document.hidden) return;
-    const p = progress();
-    const hr = hero.getBoundingClientRect();
-    if (!(hr.top >= 0 && hr.bottom >= innerHeight && p < 0.15)) drawBg(now);   // stars only when something shows them
+    const sy = scrollY;
+    const p = progress(sy);
+    drawLede(now, sy);
+    drawHeads(sy);
+    const heroCovers = p < 0.15 && sy >= G.track - 1 && G.heroH >= VH;
+    if (!heroCovers) drawBg(now);                          // stars only when something shows them
     if (!visible) return;
     if (p >= 0.77) {                                       // wipe finished: the hero is fully open, stop drawing it
-      if (!heroDone) { if (glReady) gl.clear(gl.COLOR_BUFFER_BIT); vignette.style.opacity = '0'; hero.style.background = 'transparent'; hero.style.pointerEvents = 'none'; heroDone = true; }
+      prevT = 0;
+      if (!heroDone) { if (glReady) gl.clear(gl.COLOR_BUFFER_BIT); setStyle(vignette, 'opacity', '0'); setStyle(hero, 'background', 'transparent'); setStyle(hero, 'pointerEvents', 'none'); heroDone = true; }
       return;
     }
     heroDone = false;
     if (now - last >= 1000 / 30) { last = now; drawTitle(now, p); updateReadout(now); }
     renderFeed(now, p);                                    // every frame, on the graphics card
+    if (prevT) {                                           // keep it smooth on slower machines: step resolution down if frames run long
+      slowAvg += ((now - prevT) - slowAvg) * 0.05;
+      if (slowAvg > 24 && RS > 0.5 && now - lastDrop > 1500) { RS = Math.max(0.5, RS - 0.25); layout(); lastDrop = now; slowAvg = 16; }
+    }
+    prevT = now;
     const w = clamp((p - 0.15) / 0.6);
-    vignette.style.opacity = (1 - w).toFixed(3);
-    hero.style.pointerEvents = w > 0.98 ? 'none' : '';
-    hero.style.background = w > 0 ? 'transparent' : '';   // let the opened blocks show the stars
-    if (!glReady) hero.style.opacity = (1 - w).toFixed(3); // no WebGL: simply fade the hero out
+    setStyle(vignette, 'opacity', (1 - w).toFixed(2));
+    setStyle(hero, 'pointerEvents', w > 0.98 ? 'none' : '');
+    setStyle(hero, 'background', w > 0 ? 'transparent' : '');   // let the opened blocks show the stars
+    if (!glReady) setStyle(hero, 'opacity', (1 - w).toFixed(2));
   }
 
-
   const go = () => {
-    layout(); layoutBg(); initGL();
+    layout(); layoutBg(); initGL(); measure();
     if (reduce) { video.pause(); video.currentTime = 8; }
     video.play && video.play().catch(() => {});
     requestAnimationFrame(tick);
   };
   (document.fonts ? Promise.all([document.fonts.load('600 100px "Geist"'), document.fonts.load('400 12px "Geist Mono"')]) : Promise.resolve()).then(go, go);
-  let rz; addEventListener('resize', () => { clearTimeout(rz); rz = setTimeout(() => { layout(); layoutBg(); }, 120); });
+  let rz; addEventListener('resize', () => { clearTimeout(rz); rz = setTimeout(() => { layout(); layoutBg(); measure(); }, 120); });
+  let rm; new ResizeObserver(() => { clearTimeout(rm); rm = setTimeout(measure, 100); }).observe(document.body);
   addEventListener('touchstart', () => video.paused && video.play().catch(() => {}), { once: true, passive: true });
 
-  if (window.Lenis && !reduce) {
-    const lenis = new Lenis({ lerp: 0.085, smoothWheel: true });
-    const loop = t => { lenis.raf(t); requestAnimationFrame(loop); };
-    requestAnimationFrame(loop);
-  }
+  if (window.Lenis && !reduce) lenis = new Lenis({ lerp: 0.085, smoothWheel: true, autoRaf: false });
 })();
 </script>
 </body>
