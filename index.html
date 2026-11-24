@@ -9,9 +9,9 @@
 <meta property="og:description" content="An independent studio making games and apps.">
 <meta name="theme-color" content="#0a0a0a">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%230a0a0a'/%3E%3Ctext x='16' y='21' font-family='monospace' font-size='13' fill='%23f2f2ee' text-anchor='middle'%3E[F]%3C/text%3E%3C/svg%3E">
-<link rel="preload" href="assets/fonts/instrument-sans-latin-var.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="assets/fonts/geist-latin-var.woff2" as="font" type="font/woff2" crossorigin>
 <style>
-@font-face{font-family:"Instrument Sans";src:url(assets/fonts/instrument-sans-latin-var.woff2) format("woff2");font-weight:400 700;font-stretch:75% 100%;font-display:block}
+@font-face{font-family:"Geist";src:url(assets/fonts/geist-latin-var.woff2) format("woff2");font-weight:100 900;font-display:block}
 @font-face{font-family:"Geist Mono";src:url(assets/fonts/geist-mono-latin-400-normal.woff2) format("woff2");font-weight:400;font-display:swap}
 @font-face{font-family:"Geist Mono";src:url(assets/fonts/geist-mono-latin-500-normal.woff2) format("woff2");font-weight:500;font-display:swap}
 
@@ -23,7 +23,7 @@
   --paper-2:#e4e4df;      /* rules on day */
   --dim:rgba(242,242,238,.5);
   --dim-ink:rgba(10,10,10,.55);
-  --display:"Instrument Sans","Helvetica Neue",Arial,sans-serif;
+  --display:"Geist","Helvetica Neue",Arial,sans-serif;
   --mono:"Geist Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
   --pad:clamp(16px,3vw,40px);
   color-scheme:dark;
@@ -56,8 +56,8 @@ html.lenis,html.lenis body{height:auto}
 
 .copy{position:absolute;z-index:3;left:max(var(--pad),env(safe-area-inset-left));right:max(var(--pad),env(safe-area-inset-right));
   top:50%;transform:translateY(-46%)}
-.title{margin:0;font-family:var(--display);font-weight:500;font-stretch:75%;text-transform:uppercase;
-  font-size:min(24vw,23svh);line-height:.84;letter-spacing:-.01em}
+.title{margin:0;font-family:var(--display);font-weight:600;text-transform:uppercase;
+  font-size:min(17vw,20svh);line-height:.86;letter-spacing:-.055em}
 .title .ln{display:block;white-space:nowrap}
 .title .ch{display:inline-block;text-align:center}
 .sub{margin:18px 0 0;color:var(--dim)}
@@ -74,7 +74,7 @@ html.lenis,html.lenis body{height:auto}
   .hero{height:82vh;height:82svh;min-height:0}
   .track{height:152vh;height:152svh}
   .copy{text-align:center;transform:translateY(-54%)}
-  .title{font-size:min(31vw,19svh)}
+  .title{font-size:min(22vw,15svh)}
   .readout{left:0;right:0;justify-items:center;text-align:center}
 }
 
@@ -85,7 +85,7 @@ html.lenis,html.lenis body{height:auto}
 .wrap{max-width:1240px;margin:0 auto}
 .statement{display:flex;flex-direction:column;align-items:center;text-align:center;padding-top:clamp(8px,2vw,24px)}
 .kicker{color:var(--dim-ink);margin:0 0 clamp(28px,4vw,48px)}
-.lede{margin:0;font:500 clamp(34px,5.6vw,86px)/1 var(--display);font-stretch:75%;text-transform:uppercase;letter-spacing:-.005em}
+.lede{margin:0;font:600 clamp(28px,4.6vw,72px)/1.02 var(--display);text-transform:uppercase;letter-spacing:-.045em}
 .lede .ln{display:block}
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 /* each word is a mask; its letters roll up into it */
@@ -96,7 +96,7 @@ html.lenis,html.lenis body{height:auto}
 /* the word in the brackets: a one-line window that scrolls up to the next word */
 .rot{display:inline-block;height:1em;overflow:hidden;vertical-align:top;padding:0 .04em}
 .rot-in{display:flex;flex-direction:column;align-items:flex-start}
-.rot-in b{display:block;height:1em;line-height:1;font-weight:500;white-space:nowrap}
+.rot-in b{display:block;height:1em;line-height:1;font-weight:600;white-space:nowrap}
 .cols{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));margin-top:clamp(64px,9vw,120px);border-top:1px solid var(--ink)}
 .cols > div{padding:18px 24px 0 0;min-width:0}
 .cols > div + div{padding-left:24px;border-left:1px solid var(--paper-2)}
@@ -422,7 +422,7 @@ footer a:hover{text-decoration:underline;text-underline-offset:4px}
     video.play && video.play().catch(() => {});
     requestAnimationFrame(tick);
   };
-  (document.fonts ? Promise.all([document.fonts.load('500 100px "Instrument Sans"'), document.fonts.load('400 12px "Geist Mono"')]) : Promise.resolve()).then(go, go);
+  (document.fonts ? Promise.all([document.fonts.load('600 100px "Geist"'), document.fonts.load('400 12px "Geist Mono"')]) : Promise.resolve()).then(go, go);
   let rz; addEventListener('resize', () => { clearTimeout(rz); rz = setTimeout(layout, 120); });
   addEventListener('touchstart', () => video.paused && video.play().catch(() => {}), { once: true, passive: true });
 
