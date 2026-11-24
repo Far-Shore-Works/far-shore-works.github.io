@@ -39,7 +39,7 @@ html.lenis,html.lenis body{height:auto}
 .mono{font:500 11px/1.4 var(--mono);letter-spacing:.14em;text-transform:uppercase}
 
 /* ---------- HERO (pinned while it dissolves) ---------- */
-.track{position:relative;z-index:2;height:175vh;height:175svh;pointer-events:none}
+.track{position:relative;z-index:2;height:200vh;height:200svh;background:var(--paper);pointer-events:none}
 .hero{position:sticky;top:0;height:100vh;height:100svh;min-height:520px;overflow:hidden;pointer-events:auto}
 .feed{position:absolute;inset:0;width:100%;height:100%;display:block;z-index:1}
 /* The video is only a source: it is never shown, the characters draw the picture. */
@@ -65,21 +65,20 @@ html.lenis,html.lenis body{height:auto}
 .readout .on{color:var(--paper)}
 .tick{display:inline-block;width:.6em;height:.6em;background:var(--paper);margin-right:.5em;vertical-align:.05em}
 @media (prefers-reduced-motion:no-preference){.tick{animation:blink 1.6s steps(2,start) infinite}@keyframes blink{to{opacity:.15}}}
-/* The studio section sits directly behind the pinned hero; the pixel wipe punches through to it. */
-.day{margin-top:-100vh;margin-top:-100svh;min-height:100vh;min-height:100svh}
-@media (min-height:0) and (max-height:519px){.day{margin-top:-520px}}
-@media (max-width:640px){.day{margin-top:-82vh;margin-top:-82svh}}
+/* The wipe turns the screen fully white first; the studio section then rises in from below. */
+.day{z-index:3;margin-top:-38vh;margin-top:-38svh;min-height:100vh;min-height:100svh}
+@media (max-width:640px){.day{margin-top:-20vh;margin-top:-20svh}}
 /* Phone: a shorter hero, title centred and as wide as the screen allows */
 @media (max-width:640px){
   .hero{height:82vh;height:82svh;min-height:0}
-  .track{height:152vh;height:152svh}
+  .track{height:172vh;height:172svh}
   .copy{text-align:center;transform:translateY(-54%)}
   .title{font-size:min(22vw,15svh)}
   .readout{left:0;right:0;justify-items:center;text-align:center}
 }
 
 /* ---------- STUDIO (day side) ---------- */
-.day{position:relative;z-index:1;background:var(--paper);color:var(--ink);
+.day{position:relative;background:var(--paper);color:var(--ink);
   padding:clamp(24px,4vw,48px) max(var(--pad),env(safe-area-inset-right)) max(40px,env(safe-area-inset-bottom)) max(var(--pad),env(safe-area-inset-left))}
 .day ::selection{background:var(--ink);color:var(--paper)}
 .wrap{position:relative;z-index:1;max-width:1240px;margin:0 auto}
@@ -307,7 +306,7 @@ footer a:hover{text-decoration:underline;text-underline-offset:4px}
       blocks.push({ x, y, r: Math.random() * 0.62 + (1 - y / brows) * 0.38, g: rnd(SCRAMBLE) });
   }
   function drawWipe(p) {
-    const w = clamp((p - 0.24) / 0.6);
+    const w = clamp((p - 0.15) / 0.6);
     vignette.style.opacity = (1 - w).toFixed(3);
     hero.style.pointerEvents = w > 0.98 ? 'none' : '';
     if (w <= 0) return;
@@ -315,17 +314,16 @@ footer a:hover{text-decoration:underline;text-underline-offset:4px}
     fctx.font = `500 ${bsz * 0.55}px "Geist Mono", ui-monospace, monospace`;
     fctx.textAlign = 'center'; fctx.textBaseline = 'middle';
     for (const b of blocks) {
-      const s = (w * 1.25 - b.r) / 0.22;
+      const s = (w * 1.3 - b.r) / 0.3;
       if (s <= 0) continue;
       const px = b.x * bsz, py = b.y * bsz;
       if (s < 0.45) {                                      // a glyph flickers on first
         fctx.globalCompositeOperation = 'source-over';
         fctx.fillStyle = `rgba(242,242,238,${(s / 0.45).toFixed(3)})`;
         fctx.fillText(b.g, px + bsz / 2, py + bsz / 2);
-      } else {                                             // then the block opens onto the studio section
-        const k = ease(clamp((s - 0.45) / 0.55)), inset = (1 - k) * bsz * 0.28;
-        fctx.globalCompositeOperation = 'destination-out';
-        fctx.fillStyle = '#000';                           // fully opaque, so the hole is clean
+      } else {                                             // then the block grows and fills to day
+        const k = ease(clamp((s - 0.45) / 0.55)), inset = (1 - k) * bsz * 0.5;
+        fctx.fillStyle = PAPER;
         fctx.fillRect(px + inset, py + inset, bsz - inset * 2 + 0.5, bsz - inset * 2 + 0.5);
       }
     }
